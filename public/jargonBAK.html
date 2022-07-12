@@ -1,0 +1,1193 @@
+<html>
+  <style> 
+ 
+    svg {
+        cursor: default;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+        border: 1px;      
+        border-style: dotted;
+        background-color: lightgray;
+        width: 100%;
+    }
+
+    .hidden {
+        opacity: 0;
+        visibility: none;
+        display:none;
+    }    
+    
+    .node path {
+      stroke-width: 2px;
+      pointer-events: all; 
+
+    }
+    
+    .node text { 
+        font: 11px sans-serif; 
+        pointer-events: none; 
+    }
+        
+    .link {
+      fill: none;
+      cursor: pointer;
+    }
+
+
+    .drag-line {
+        stroke: steelblue;
+        stroke-width: 4px;
+        pointer-events: none; 
+        stroke-dasharray: 2,2;        
+    }
+ 
+    @keyframes aselector {
+        0%   {stroke-width: 7px; filter: saturate(300%); filter: brightness(100%); }
+        50%   {stroke-width: 3px; filter: saturate(20%); filter: brightness(70%);}
+        100%   {stroke-width: 7px; filter: saturate(300%); filter: brightness(100%); }
+        }
+
+    .selected {
+        animation-name: aselector;
+        animation-duration: 1s;
+        animation-iteration-count: infinite;
+    }    
+
+    .linkG .selected {
+        stroke-dasharray: 5,6;     
+    }   
+
+    .nodeG {
+        fill: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        cursor: pointer;
+    }        
+
+    #form {        
+
+     text-align:center;
+     max-width:340px;
+    }   
+
+    #container {        
+        flex: content;
+    
+    }  
+    
+    #formFields {        
+        margin:10px;   
+        text-align:right;
+    }     
+
+    .form-fields-names {
+
+        width:100px;
+        margin:10px;
+        text-align:right;
+    }    
+
+    .section {
+        margin:10px;
+        padding:10px;
+        text-align:center;
+    }    
+
+    .main {
+        display: flex;
+        flex-direction: column;
+        text-align:center;
+    }    
+
+    #node-header {
+        font-size:1.3em;
+        font-family:sans;
+    }    
+
+    #dataUpdateResult {
+        color: red;
+        font-size:1em;
+        font-family:sans;
+        padding:10px;
+    }    
+
+    .form-textarea {
+        height:90px;
+        width:200px;
+    }    
+
+    .form-select {
+        width:auto;
+        margin-top:10px;
+        margin-bottom:3px;
+    }    
+
+    .form-field-dynamic {
+        margin: 7px;
+        background-color:#eee;
+        padding:3px;
+    }    
+
+    #formf-sources, #formf-targets {
+        margin: 7px;
+        background-color:#ecb;
+        padding:3px;
+    }       
+    
+    .edge-type-parameter#formf-repository {
+        display: none;
+    }   
+
+    .node-type-template#formf-args {
+        display: none;
+    }      
+
+    #createNewForm {
+        width: 300px;
+        padding:20px;
+    }    
+
+    #createNewForm div {
+        margin:10px;
+        text-align:right;
+    }  
+    
+    #createNewHeader {
+        font-size: 1.2em;
+    }    
+
+    </style>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+
+    <body>
+        <div class="main">
+            <div id="container">
+                <div>
+                    <input id="updateData" type="button" value="Save Data"><span id="dataUpdateResult"></span>
+                </div>
+                <div>
+                    <input class="loadButtons" id="get2" type="button" value="Demo1">
+                    <input class="loadButtons" id="get3" type="button" value="Demo2">
+                    <input class="loadButtons" id="get4" type="button" value="Empty">
+                    <input id="createNew" type="button" value="Create New">
+                    <select name="dataSelector"></select>
+                </div>
+            </div>
+            <div id="form" class="hidden">
+                <form id="editForm">
+                    <div id="node-header"></div>
+                    <div id="formFields">
+                        <div class="section">
+                            <input id="reset" type="reset" value="Reset"/>
+                            <input id="update" type="button" value="Update"/>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="createNewForm" class="hidden">
+                <form id="createForm">
+                    <div id="createNewHeader">New graph metadata:</div>
+                    <div id="formFields">
+                        <div >Name: <input name="metadata.name" type="text"/></div>
+                        <div >Description: <input name="metadata.description" type="text"/></div>
+                        <div >Labels: 
+                            <textarea rows=6 cols=25 name="metadata.labels" type="text">{
+                                "test": "label",
+                                "label2": "b"
+                            }
+                            </textarea></div>
+                        <div class="section"><input id="createNewSave" type="button" value="Save"/></div>                        
+                    </div>    
+                </form>
+            </div>
+        </div>
+    <script>
+
+
+
+   
+
+class Graph {
+
+
+    constructor(container, width, height) {
+
+
+       /* this.metadata = {
+		    "name": "newname",
+		    "description": "testing...",
+		    "labels": {
+			    "test": "label"
+		    },
+		    "arguments": {
+			    "parameters": [
+				{
+					"name": "msg",
+					"value": "Hello there"
+				}
+			]
+		    }
+	    };
+*/
+        this.images = [
+            {type: "python", "color": "blue"},
+            {type: "nodejs", "color": "yellow"},
+            {type: "ubuntu", "color": "red"},
+            {type: "curl", "color": "gray"},
+            {type: "whalesay", "color": "cyan"}
+            ];
+
+
+        this.edgeTypes = [    
+            {"type": "parameter", "color": "blue"},
+            {"type": "artifact", "color": "gold"}
+        ];
+
+        this.nodeTypes = [    
+            {"type": "script"},
+            {"type": "template"}
+        ];
+
+
+        this.repType =  {
+            emptyDir: {
+                name: '',			
+				path: "/tmp"                
+            },
+            gcs: {
+                path: '',
+                secret: ''
+                },
+            ephemeral: {
+                name: '',
+                path: '',
+            },
+            nfs: {
+                name: '',
+                mountPath: '',
+                labels: '',
+                capacity: '',
+                accessModes: '',
+            }
+        };
+     
+        this.margin = {top: 20, right: 90, bottom: 10, left: 50},
+        this.width = width - this.margin.left - this.margin.right,
+        this.height = height - this.margin.top - this.margin.bottom;
+
+        this.svg = d3.select(container).append("svg")
+         //   .attr("width", this.width + this.margin.left + this.margin.right)
+            .attr("height", this.height + this.margin.top + this.margin.bottom);
+        this.width = this.svg.node().clientWidth;
+       
+
+        this.g = this.svg.append("g")
+            .attr("transform","translate(" + this.margin.left + "," + this.margin.top + ")");
+
+        this.markerG = this.svg.append("defs");   
+
+        this.linkG = this.g.append("g").classed('linkG', true);
+        this.nodeG = this.g.append("g").classed('nodeG', true);
+
+        this.dragLine = this.g.append('path')
+	        .classed('drag-line hidden', true)
+            .style('marker-end', '')
+	        .attr('d', 'M0,0L0,0');
+
+        this.dataSrc = '';        
+        this.nodes = [];       
+        this.links = [];
+
+        this.node = '';
+        this.link = '';
+        this.marker = '';
+        
+        this.simulation = false;
+        this.mouseDownNode = false;
+
+        this.tickTransitionDelay = 0;
+        this.doNotInclude = ['id','index','x','y','vx','vy','fx','fy'];
+
+
+        this.svg
+            .on('contextmenu', e => this.createNewNode(e))
+            .on('mousemove', e => this.mouseMoveEventGlobal(e)) 
+            .on('mouseup', e => this.mouseUpEventGlobal(e)) 
+
+
+        d3.select("#updateData").on("click", () => {
+          console.log('Update data');  
+          d3.json("/updateData", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(this.nodesToData())
+            }).then( (d) => {             
+                d3.select("#dataUpdateResult").html(d.data).style("opacity",1);
+                d3.select("#dataUpdateResult").transition().duration(2000).style("opacity",0).on('end', () => d3.select("#dataUpdateResult").html(''));
+            })                      
+        })   
+
+
+        d3.select("#createNew").on("click", () => {
+            console.log('Create New');  
+            d3.select("#form").classed("hidden", true);
+            d3.select("#createNewForm").classed("hidden", false);
+            //this.dataToNodes({ nodes: [], edges: [] });
+            this.nodes = [];
+            this.links = [];
+            this.linkColors = [];
+            if(this.simulation) this.simulation.stop();
+            this.drawGraph();
+            this.simulation = false;
+           // this.drawGraph();            
+            
+        })  
+        
+        d3.select("#createNewSave").on("click", () => {
+            d3.select("#createNewForm").classed("hidden", true);
+            const form = d3.select("#createForm"),
+                els = form.selectAll("input,textarea"),
+                data = this.dataSrc;
+
+            data.metadata = {};
+
+            els.each(function() {
+                const el = d3.select(this);
+                const v = el.property("value"),
+                    name  = el.attr("name");
+                if(!name) return;
+                let dp = data, dpl = {}, pd,pdd;
+                console.log('name=' + name + ', value=' + v);
+                (name + '.#').split('.').forEach(d => {
+                    if(d === '#') dpl[pd] = v.match(/^\s*[{[]/) ? JSON.parse(v) : v;
+                    else {
+                        if(!dp[d]) dp[d] = {};
+                        dpl = dp;
+                        dp = dp[d];
+                        pd = d;                    
+                    }                   
+                })  
+            })    
+            if(!data.metadata.name) data.metadata.name = 'newname'; 
+            d3.select("#updateData").attr("value","Save Data [" + data.metadata.name + ".json]")
+    
+        })         
+        
+
+        d3.selectAll(".loadButtons").on("click", (d) => {
+            const tid = 'data/' + (d ? d.target.id : '');
+            
+            this.nodes = [];
+            this.links = [];
+            this.linkColors = [];
+            this.dataSrc = { metadata: {}, nodes: this.nodes, edges: this.links }
+            if(this.simulation) this.simulation.stop();
+            this.drawGraph();
+            this.simulation = false; // restart it again later
+            d3.json(tid).then(d => { 
+                this.dataToNodes(d);
+                d3.select("#updateData").attr("value","Save Data [" + this.dataSrc.metadata.name + ".json]") 
+                this.drawGraph() })                                
+        })          
+
+        d3.select(".loadButtons").on("click").apply(this); /// auto-click first button
+
+        d3.json("/getlist").then(d => { 
+                const re = /.json/g;
+                const files = d.data.replace(re,'').split(',');
+                files.unshift("select data file")
+
+                d3.select('[name="dataSelector"]')
+                .on('change', (e,d) => {
+                    const index = e.srcElement.selectedIndex,
+                        opt = e.srcElement[index].value;
+                        if(index) {
+                            console.log(e,opt)
+
+                            this.nodes = [];
+                            this.links = [];
+                            this.linkColors = [];
+                            this.dataSrc = { metadata: {}, nodes: this.nodes, edges: this.links }
+                            if(this.simulation) this.simulation.stop();
+                            this.drawGraph();
+                            this.simulation = false; // restart it again later
+
+
+                            d3.json('/getdataFile?data=' + opt).then(d => { 
+                                this.dataToNodes(d);
+                                console.log('got data',d)
+                                d3.select("#updateData").attr("value","Save Data [" + this.dataSrc.metadata.name + ".json]") 
+                                this.drawGraph() 
+                            })       
+                        }    
+
+                })
+                    .selectAll("option").data(files)
+                    .join("option")
+                    .attr("value", d => d)
+                    .html(d => d)
+                   
+ //               d3.select("#updateData").attr("value","Save Data [" + this.dataSrc.metadata.name + ".json]") 
+   //             this.drawGraph() })                                
+        })          
+        
+    }
+
+    mouseMoveEventGlobal = (e) => {
+	
+        if(!this.mouseDownNode) return;
+        this.dragLine.attr('d', this.linkArcUni({source:this.mouseDownNode, 
+            target: {x: e.x - this.margin.left , y: e.offsetY -this.margin.top ,radius:1}} ,true))
+    }
+
+    mouseUpEventGlobal = (e) => {	
+        this.resetMouseVars();
+    }
+
+  
+    createNewNode(e) {
+
+        e.preventDefault();
+        const lastId = +d3.max(this.nodes, d => d.id) || 0;
+        const newNode = { id: 1+lastId, 
+                radius: 25, 
+                type: "script",
+			    imageName: "python",
+			    args: "",
+                opacity: 1,
+                name: 'newNode_' + (1+lastId), 
+                x: e.offsetX, y: e.offsetY, 
+                fx: e.offsetX, fy: e.offsetY };
+        this.nodes.push(newNode);
+        if(this.simulation) this.simulation.stop();
+        this.drawGraph();
+        this.simulation.restart();
+
+    }    
+
+    nodesToData() { // export data
+        const data = this.dataSrc;
+        data.nodes =  [];
+        data.edges =  JSON.parse(JSON.stringify(this.links));
+        const filtered = this.doNotInclude.filter(d => d != 'id')
+        this.nodes.forEach(d => {
+            const o = {};            
+            Object.keys(d).filter(d => 0 > filtered.indexOf(d)).forEach(c => o[c] = d[c]);
+            data.nodes.push(o);
+        })   
+
+        data.edges.forEach(d => {           
+            if(!d.sources) d.sources = [ { 
+                "template": d.source.imageName,
+					"config": {
+						name: d.source.name,
+						path: "output",
+                        value: ""
+                    }    
+            } ];
+            if(!d.targets) d.targets = [ {
+                "template": d.target.imageName,
+					"config": {
+						name: d.target.name,
+						path: "input",
+                        value: ""
+                    }
+             } ];
+            d.source = d.source.id;
+            d.target = d.target.id;
+        })   
+        console.log('data for export', data.edges);
+        return data;         
+    }    
+    
+    dataToNodes(data) {
+        this.dataSrc = data;
+        this.nodes = this.dataSrc.nodes.map(d => { d.radius = 25; return d});                  
+        this.links = this.dataSrc.edges;
+        this.linkColors = [...new Set(this.links.map(d => this.edgeTypes.find(dd => d.type == dd.type).color ))];
+
+        console.log(this.nodes, this.dataSrc.nodes);
+    }    
+    
+    initSim() {
+
+        this.simulation = d3.forceSimulation(this.nodes)
+            .force("link", d3.forceLink(this.links).id(d => d.id))
+            .force("charge", d3.forceManyBody().strength(6))
+            .force("x", d3.forceX(this.width/2))
+            .force("y", d3.forceY(this.height/2))
+            .force('collide', d3.forceCollide(d => 65))
+            .velocityDecay(0.4)
+            .alpha(0.6)
+    }    
+
+    loadData(file) {
+        d3.json(file).then(d => { this.dataToNodes(d); this.drawGraph() })
+    }
+    
+    
+    linkArc = d =>`M${d.source.x},${d.source.y}A0,0 0 0,1 ${d.target.x},${d.target.y}`
+
+    linkArcUni = (d, fixCoords = false) =>  {
+        fixCoords = false;
+		const rB1 = d.source.radius || 1,
+			rB2 = d.target.radius || 1,
+			rA1 = d.source.radius || 1,
+			rA2 = d.target.radius || 1;
+
+        const 
+            sx = fixCoords ?  d.source.x + this.margin.left : d.source.x,
+            tx = fixCoords ?  d.target.x + this.margin.left : d.target.x,
+            sy = fixCoords ?  d.source.y + this.margin.top : d.source.y,
+            ty = fixCoords ?  d.target.y + this.margin.top : d.target.y;
+		
+		const deltaX = tx - sx,
+			deltaY = ty - sy,
+			alfa = Math.atan( deltaX / deltaY );
+        
+		const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY) ,
+			normX = deltaX / dist,
+			normY = deltaY / dist;
+        
+		const r1 = 1 / Math.sqrt( Math.pow( Math.sin( alfa) / rB1, 2) + Math.pow( Math.cos( alfa) / rA1, 2) ),        
+			r2 = 1 / Math.sqrt( Math.pow( Math.sin( alfa) / rB2, 2) + Math.pow( Math.cos( alfa) / rA2, 2) ),                
+            
+			sourcePadding = d.left ? r1 +3 : r1 +3,
+			targetPadding = d.right ? r2 +8 : r2 +8,
+        
+			sourceX = sx + (sourcePadding * normX),
+			sourceY = sy + (sourcePadding * normY),
+			targetX = tx - (targetPadding * normX),
+			targetY = ty - (targetPadding * normY);
+        // console.log(r1,r2, sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY)
+    
+		return r1 ? 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY : `M${d.source.x},${d.source.y}A0,0 0 0,1 ${d.target.x},${d.target.y}` ;
+  }
+
+
+    clamp = (x, lo, hi) => x < lo ? lo : x > hi ? hi : x
+
+    drawGraph() {
+        const that = this;
+
+        if(!this.simulation) this.initSim();
+
+        function dragstart() {
+            d3.select(this).classed("fixed", true).raise();
+        }
+
+        function dragend() {
+            console.log('dragstop')
+           // d3.select(this).classed("fixed", true);
+        }
+
+        function dragged(event, d) {
+            d.fx = that.clamp(event.x, 0, that.width);
+            d.fy = that.clamp(event.y, 0, that.height);
+            that.simulation.alpha(0.1).restart();
+        }
+
+        this.drag = d3
+            .drag()
+            .on("start", dragstart)
+            .on("drag", dragged)
+            .on("end", dragend);
+
+        this.marker = this.markerG.selectAll("marker")
+            .data([... this.linkColors, 'steelblue' ], d =>d )
+            .join(
+                enter => enter.append("marker")
+                    .attr("id", d => `arrow-${d}`)
+                    .attr("viewBox", "0 -5 10 10")
+                    .attr("refX", 7)
+                    .attr("refY", 0)
+                    .attr("markerWidth", 3)
+                    .attr("markerHeight", 3)
+                    .attr("orient", "auto")
+                    .each(function(d) {
+                        const el = d3.select(this);
+                        el.append("path")
+                            .attr("fill", d => d)
+                            .attr("d", 'M0,-5L10,0L0,5')
+                    })
+                                  
+              ,
+                update => update,
+                // exit => exit.transition().duration(200).style('opacity',0).remove()
+                exit => exit.remove()
+            )   
+
+        this.link = this.linkG.selectAll(".link")
+            .data(this.links, d => [d.source.id,d.target.id])
+            .join(
+                enter => 
+                    enter.append("path")
+                        .each(d => d.color = this.edgeTypes.find(dd => dd.type == d.type).color)
+                        .classed('link', true)
+                        .on('click',(d,e) => this.editLink(d,e))                        
+                        .attr("stroke", d => d.color)
+                        .attr("stroke-width", d => d.width || 1)
+                        .attr("opacity", d => d.opacity || 1)
+                        .attr("linecap", d => d.linecap || '')
+                        .attr("marker-end", d => d.source.y !== d.target.y ? `url(${new URL(`#arrow-${d.color}`, location)})` :'')
+                        .call(d => d.append("title")
+                            .text("click to Edit edge parameters or Remove edge")),
+                update => update
+                        .each(d => d.color = this.edgeTypes.find(dd => dd.type == d.type).color)                
+                        .attr("stroke", d => d.color)
+                        .attr("stroke-width", d => d.width || 1)
+                        .attr("opacity", d => d.opacity || 1)
+                        .attr("linecap", d => d.linecap || '')
+                        .attr("marker-end", d => d.source.y !== d.target.y ? `url(${new URL(`#arrow-${d.color}`, location)})` :''),                                      
+                exit => exit.remove()
+
+            )     
+
+        this.node = this.nodeG.selectAll(".node")
+            .data(this.nodes, d => d.id)
+            .join(enter => 
+                enter.append("g")
+                    .attr('id', d => 'node-' + d.id)
+                    .classed('node', true)
+                    .call(this.drag)                    
+                    .on('mousedown',(d,e) => this.mouseDownNodeEvent(d,e))
+                    .on('mouseup',(d,e) => this.mouseUpNodeEvent(d,e))
+                    .on('mousemove',(d,e) => this.mouseMoveNodeEvent(d,e))
+                    .on('click',(d,e) => this.editNode(d,e))
+                    .each(function(d) {
+                        const el = d3.select(this);
+                        d.radius = d.type == 'script' ? 25: 15;
+                        el.append("text")
+                            .attr("x", d => +d.radius + 3)
+                            .attr("y", "0.31em")
+                            .text(d => d.name)
+                            .clone(true).lower()
+                            .attr("fill", "none")
+                            .attr("stroke", "white")
+                            .attr("stroke-width", 3);
+                        el.append("circle")
+                            .attr("stroke", d => that.images.find(dd => dd.type === d.imageName).color || 'blue')
+                            .attr("fill", d => that.images.find(dd => dd.type === d.imageName).color || 'blue')                            
+                            .attr("opacity", d => d.opacity || 1)
+                            .attr("stroke-width", d => d.strokewidth || 1.5)
+                            .attr("r", d => d.radius)
+                            .lower()
+                            .append("title")
+                                .text(d => "id=" + d.id + ", click to edit node, CTRL+mouse to connect to another node")
+                    }),
+                    update => update
+                        .each(function(d) {
+                            d.radius = d.type == 'script' ? 25: 15;
+                            const el = d3.select(this);
+                        el.selectAll("text")
+                            .transition().duration(200)
+                            .text(d => d.name)           
+                            .attr("x", d => +d.radius +3)      
+                        el.select("circle")
+                            .transition().duration(200)
+                            .attr("opacity", d => d.opacity || 1)
+                            .attr("stroke-width", d => d.strokewidth || 1.5)
+                            .attr("r", d => d.radius)
+                            .attr("stroke", d => that.images.find(dd => dd.type === d.imageName).color || 'blue')
+                            .attr("fill", d => that.images.find(dd => dd.type === d.imageName).color || 'blue')                            
+
+                    }),
+                    //exit => exit.transition().duration(200).style('opacity',0).remove()
+                    exit => exit.remove()
+                    
+                    
+            )
+       
+        this.simulation.on("tick", () => {
+            this.link.transition().duration(this.tickTransitionDelay).attr("d", this.linkArcUni);
+            this.node.attr("transform", d => `translate(${d.x},${d.y})`);
+        });    
+
+    }
+
+
+    resetMouseVars = () => {
+        this.mouseDowNode = null;
+        this.mouseUpNode = null;
+        this.dragLine
+            .classed('hidden', true)
+            .style('marker-end', '');
+    }
+
+    spliceLinksForNode = (node) => {
+	    const toSplice = this.links.filter(d => d.source === node || d.target === node);
+	    toSplice.forEach(d => this.links.splice(this.links.indexOf(d), 1));
+    }
+
+
+    makeMenuEdge(el, values, field, value, e, dd) {
+        const f = d3.select("#formFields");
+        const that = this;
+        const sel = el.append("select").attr('name', field).classed('form-select', true).on("change", function(d) {            
+            const  el = d3.select(this),
+                index = sel.node().selectedIndex,
+                ff = 'formf-repository';
+            if(values[index][field] == 'artifact') {
+                f.select("#" + ff).classed('hidden', false);
+            }else{
+                f.select("#" + ff).classed('hidden', true);                                
+            }    
+            console.log(e,values[index][field]);
+            e.type = values[index][field];
+            that.parametersForm(el, 'sources', e);
+            that.parametersForm(el, 'targets', e);
+            that.editLink(dd,e)
+        });
+        values.forEach(d => {
+            sel.append("option").attr("value", d[field]).html(d[field]).property("selected", value === d[field])
+        })    
+        //sel.on("change").apply(this);
+    }    
+
+    makeMenu(el, values, field, value, fieldName, callback) {
+
+        const f = d3.select("#formFields");
+        const sel = el.append("select").attr('name', fieldName? fieldName : field).classed('form-select', true).on("change", function(d) {            
+            const  el = d3.select(this),
+                index = sel.node().selectedIndex;
+
+                console.log('selected item:' + index, values[index][value])
+                if(callback) (callback)(values[index]);                         
+        });
+        values.forEach(d => {
+            sel.append("option").attr("value", d[field]).html(d[field]).property("selected", value === d[field])
+        })    
+    }        
+
+
+    artifactForm(el, rep_data) {
+
+        const that = this;
+        const fields = Object.keys(this.repType); //[ {name: 'emptyDir' }, {name: 'gcs' }, {name: 'nfs' }, {name: 'ephemeral'}];
+        
+        const type = rep_data.type,
+            field = 'repository-type'; 
+
+        let ftype = undefined;    
+
+        console.log('type = ' + type, fields);
+
+        const f = d3.select("#formFields");
+        f.select("[name='" + field + "']").remove().html("");
+
+        const sel = el.selectAll('.repository-form').data([1]).enter().append("select").attr('name', field).classed('form-select', true).on("change", function(d) {            
+            const  el = d3.select(this),
+                index = sel.node().selectedIndex,
+                ff = 'formf-repository-type',
+                fn = fields[index];
+ //               console.log('rep_data-type =',rep_data.type,fn); 
+
+                if(fn == rep_data.type) {
+                    ftype = rep_data.params;
+                }else{
+                    ftype = that.repType[fn]    
+                }    
+
+                rep_data.type = fn;
+
+                const fk = Object.keys(ftype);
+                console.log(fn,ftype,index,fk);
+
+               // that.parametersForm(el, d, e));
+
+                const fc = elx.selectAll("div")
+                .data(fk, d => d)
+                .join(enter => {
+                        const  el = enter.append("div")
+                        el.text(d => d + " : ")
+                        el.append("input").attr("name", d => "repository-" + d).property("value", d => {
+                            let vv = ftype[d];
+                            console.log(d,': value ' + vv);
+
+                            if(typeof vv == 'object') {
+                                vv = JSON.stringify(vv);
+                            }          
+                            return vv;
+                        } )
+                    }/*,
+                    update => update,
+                    exit => exit.remove()                
+                       */         
+                )
+                       
+        });
+        const elx =  el.append("div").classed("form-field-dynamic",true);
+
+        fields.forEach(d => {
+            sel.append("option").attr("value", d).html(d).property("selected", type === d)
+        })
+
+        sel.on("change").apply(this);
+        
+        return el
+
+    }    
+
+
+    parametersForm(el, type, e) {
+
+        const that = this,
+            index = 0,
+            values = e[type][index].config || {};
+        let fields, fname = type + "-config-";
+ 
+        if(e.type == 'artifact') {
+            if(type == 'sources') {
+                fields =[ 'name','path' ];
+            }else{ // targets
+                fields =[ 'name','path', 'from' ];
+            }
+        }else{
+            fields = [ 'name','value'];               
+        }    
+
+        const f = d3.select("#formFields");
+        const fn = 'config-form-' + type + '-index';
+
+    el.selectAll('.' + fn).remove().html("")
+
+        el.selectAll('.' + fn).data([1]).enter()
+            .append("div").attr('id', fname)            
+            .classed('edges-only-fields config-form-' + type + ' ' + fn, true);
+    
+
+        const sel = el.selectAll('.' + fn)
+            .datum(fields)
+            const fc = sel.selectAll("div")
+                .data(fields, d => d)
+                .join(enter => {
+                        const  el = enter.append("div")
+                       // .classed(d => 'f-' + type + '-' + d, true)
+                        el.text(d => d + " : ")
+                        el.append("input").attr("name", d => type + "-config-" + d + '-' + index).property("value", d => {
+                            const val = values[d];
+                            console.log(d,': value ' + val);
+
+                            if(typeof val == 'object') {
+                                val = JSON.stringify(val);
+                            }          
+                            return val;
+                        } )
+                }/*,
+            update => update,
+            exit => exit.remove()                
+               */         
+        )
+        return el;
+    }
+
+
+
+    editLink = (de,e) => {
+
+        const that = this;
+        const f = d3.select("#formFields");
+        const sourceTargets = ['sources','targets'];
+
+        this.linkG.selectAll(".link").classed('selected', n => n === e);
+        this.nodeG.selectAll(".node").classed('selected', false);
+
+        f.selectAll(".fields").remove();
+
+
+        if(e.type == 'artifact' && !e.repository) {
+            e.repository = { type: 'gcs', config: this.repType.gcs }
+        }    
+        
+        d3.select("#form").classed("hidden", false).selectAll('.remove-button').data(['edge'])
+            .join("input").classed('remove-button',true).attr("type","button")
+                .attr("value",d => "Remove " + d)
+                .on('click', (d) => {
+                    this.links.splice(this.links.indexOf(e), 1);
+                this.drawGraph();              
+            });
+
+        d3.select("#node-header").html('Edge ' + e.source.name + ' --> ' + e.target.name)
+
+        const editableFields =  Object.keys(e).filter(d => 0 > [...this.doNotInclude, 'source','target','width','color','linecap', 'opacity'].indexOf(d));
+  //      const editableFields =  Object.keys(e).filter(d => 0 > ['source','target','id','index','style','opacity','radius','strokewidth'].indexOf(d));
+    
+        const fields = f.selectAll(".fields")
+            .data(editableFields, d => d)
+            .join(enter => 
+                enter.append("div")
+                    .classed('fields', true)
+                    .classed('edge-type-' + e.type, true)
+                    .attr('id', d => 'formf-' + d)                     
+                    .each(function(d) {
+                        const el = d3.select(this);
+                        el.append("span")
+                            .classed('form-fields-names', true)
+                           // .classed('hidden', d => d === 'repository' && e.type != 'artifact')
+                            .text(d => d)
+                            
+                        if(d === 'repository') {
+                            if( e.type === 'artifact') {
+                                el.call(dd => that.artifactForm(dd, e.repository));
+                                return el;
+                            }                              
+                        } 
+    
+                        if(typeof e[d] === 'object') {
+                            if(d == 'sources' || d == 'targets') {
+                                el.call(dd => that.parametersForm(el, d, e));
+                            }else{
+                                el.append("textarea")
+                                    .classed('form-textarea', true)
+                                    .property("value", d => JSON.stringify(e[d]))
+                                    .attr("name", d => d)
+                            }                                
+                            return el;
+                        } 
+                        
+                        switch(d) {
+                                case 'type':                            
+                                    el.call(dd => that.makeMenuEdge(dd,that.edgeTypes,'type', e[d],e, de));
+                                    break;
+                                 default:      
+                                    el.append("input")
+                                        .attr("value", d => e[d])
+                                        .attr("name", d => d)
+                        }                                   
+                        return el;     
+                }) /*,
+                update => update
+                    .each(function(d) {
+                        const el = d3.select(this);
+                    el.select("span")
+                        .text(d => d)       
+                  
+                        if(d === 'repository' && e.type === 'artifact') {
+                           // el.call(dd => that.artifactForm(dd, e.repository));
+                            return el;
+                        }   
+                        el.select("input")
+                        .property("value", d => e[d])
+                        .attr("name", d => d)                                    
+                        return el;   
+
+
+
+                }),
+                exit => exit.remove() */ 
+            )
+
+        f.select("#update").on("click", d => {
+            d3.select("#form").classed("hidden", true);
+            editableFields.forEach(d => {
+                    const fv = f.select("[name=" + d + "]");
+                    if(fv.size()) {
+                        const val = fv.property("value");                        
+                        if(typeof e[d] === 'object') {
+                            e[d] = JSON.parse(val);
+                        }else{    
+                            e[d] = val;
+                        }
+                    }else{
+                     console.log('field: ' + d + ' is not defined');   
+                    }    
+            })
+            sourceTargets.forEach(dd => {
+
+                const fields = f.select('.config-form-' + dd).datum();
+
+                if(!e[dd]) e[dd] = [];
+                //if(!e[dd].config) 
+                const index = 0;
+                if(!e[dd][index]) e[dd][index] = { config: { } };
+                fields.forEach(d => {
+                    const fn = dd + "-config-" + d + '-' + index,
+                    fv = f.select("[name='" + fn + "']").property("value");
+                    console.log(fn,fv);
+                    e[dd][index].config[d] = fv;
+                })                                                
+            })
+            
+            if(e.type == 'artifact') {
+                const repo = e.repository.type;
+                e.repository.params = this.repType[repo];
+                for(let i in e.repository.params) {
+                    const el = f.select("[name='repository-" + i + "']");
+                    if(el.size()) {
+                        e.repository.params[i] = el.property("value");
+                    }else{
+                        
+                     console.log("[name='repository-" + i + "']", 'not defined')   
+                    }    
+                }    
+                e.repository.type = f.select("[name='repository-type']").property("value");
+                console.log('repo type ' + e.repository.type)
+            }else{
+                 if(e.repository) delete(e.repository);   
+            }    
+            console.log(e);
+            this.linkColors = [...new Set(this.links.map(d => this.edgeTypes.find(dd => d.type == dd.type).color ))];   
+            this.drawGraph();         
+            this.tickTransitionDelay = 250;
+            this.simulation.restart();    
+            this.tickTransitionDelay = 0;
+         //   f.selectAll(".fields").remove().html("");
+        })                          
+    }    
+
+    editNode = (d,e) => {
+
+
+        this.linkG.selectAll(".link").classed('selected', false);
+
+        this.nodeG.selectAll(".node").classed('selected', n => n === e);
+
+        const f = d3.select("#formFields"),
+            that = this;
+        f.selectAll(".fields").remove();
+   //     d3.select("#form").select('.remove-button').remove();
+        d3.select("#node-header").html('Node ' + e.name)
+
+        d3.select("#form").classed("hidden", false).selectAll('.remove-button').data(['node'])
+            .join("input").classed('remove-button',true).attr("type","button")
+                .attr("value",d => "Remove " + d)
+                .on('click', (d) => {
+                    this.spliceLinksForNode(e)                    
+                    this.nodes.splice(this.nodes.indexOf(e), 1);
+                    console.log(' remove node', e, this.nodes)
+                this.drawGraph();              
+            });
+
+
+        const editableFields =  Object.keys(e).filter(d => 0 > [...this.doNotInclude,'style','opacity','radius','strokewidth'].indexOf(d));
+
+        const fields = f.selectAll(".fields")
+            .data(editableFields, d => d)
+            .join(enter => 
+                enter.append("div")
+                    .classed('fields', true)
+                    .classed('node-type-' + e.type, true)
+                    .attr('id', d => 'formf-' + d)   
+                    .each(function(dd) {
+                        const el = d3.select(this);
+                        el.append("span")
+                            .classed('form-fields-names', true)
+                            .text(dd => dd)         
+                        switch(dd) {    
+                            case 'type':                            
+                                el.call(ddd => that.makeMenu(ddd,that.nodeTypes,'type', e[dd], '', n => { console.log('CALLBACK',n); 
+                                    if(e.type != n) {
+                                     //   e.type = n;
+                                     //   that.drawGraph(); 
+                                     //   that.editNode(d,e);
+                                      //  return;
+                                    }     
+                                } 
+                                ));      
+                           //     return this.editNode(d,e)  
+                                break;
+                            case 'imageName':                            
+                                el.call(ddd => that.makeMenu(ddd,that.images,'type', e[dd],'imageName'));        
+                                break;
+
+                            default:    
+                            el.append("input")
+                                .attr("value", dd => e[dd])
+                                .attr("name", dd => dd)
+                        }        
+                    })
+                )
+
+         f.select("#update").on("click", d => {
+            d3.select("#form").classed("hidden", true);
+            editableFields.forEach(d => {
+                console.log(d + ' = ')
+                const fv = f.select("[name=" + d + "]").property("value");
+                e[d] = fv;
+            })
+            this.drawGraph();         
+            this.tickTransitionDelay = 250;
+            this.simulation.restart();    
+            this.tickTransitionDelay = 0;
+      //      f.selectAll(".fields").remove().html("");
+         })                          
+    }
+
+    mouseMoveNodeEvent = (d,e) => {
+            
+        if( !this.mouseDownNode) return;
+
+        this.dragLine.attr('d', this.linkArcUni({source: this.mouseDownNode, target: e}))
+        d.stopPropagation()
+
+    }
+
+
+    mouseUpNodeEvent = (d,e) => {
+
+	    console.log('Node mouseUP ', this.mouseDownNode, e);
+					
+		if( !this.mouseDownNode) return;
+		     	    
+        this.mouseUpNode = e;
+        if(this.mouseUpNode === this.mouseDownNode) { 
+            this.resetMouseVars(); 
+            return; 
+        }
+//create new link
+
+        if(!this.links.some(d => d.source.id === this.mouseDownNode.id && d.target.id === this.mouseUpNode.id)) {
+            const newLink = { 
+                type : "artifact",                 
+                source: this.mouseDownNode.id, 
+                target: this.mouseUpNode.id, 
+                repository: {type: 'gcs', params: this.repType.gcs },
+                width: 5, 
+                color: "blue", 
+                opacity : 1, 
+                linecap : "",
+                sources: [ {
+                    "template": "whalesay",
+					"config": {
+						"name": "message",
+						"path": "output"
+					} } ]
+            ,
+                targets : [ {
+                    "template": "whalesay",
+					"config": {
+						"name": "message",
+						"path": "output"
+					} } ]
+            
+            };
+            this.links.push(newLink);
+            this.linkColors.push( this.edgeTypes.find(d => d.type == 'artifact').color );
+            this.simulation.force("link", d3.forceLink(this.links).id(d => d.id)).restart()
+        }
+        this.drawGraph()
+        this.resetMouseVars(); 
+    } 
+
+    mouseDownNodeEvent = (d,e) => {
+
+		this.mouseDownNode = e;
+        this.dragLine
+            .attr("marker-end", `url(${new URL(`#arrow-steelblue`, location)})`)
+			.classed('hidden', false)
+            .attr('d', 'M' + this.mouseDownNode.x + ',' + this.mouseDownNode.y + 'L' + this.mouseDownNode.x + ',' + this.mouseDownNode.y);	  
+    }
+
+}    
+
+
+const g = new Graph("#container", 800,600);   
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1715 @@
+<html>
+  <style> 
+ 
+    svg {
+        cursor: default;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+        border: 1px;      
+        border-style: dotted;
+        background-color: lightgray;
+        width: 100%;
+    }
+
+    .hidden {
+        opacity: 0;
+        visibility: none;
+        display:none;
+    }    
+    
+    .node path {
+      stroke-width: 2px;
+      pointer-events: all; 
+    }
+    
+    .node text { 
+        font: 11px sans-serif; 
+        pointer-events: none; 
+    }
+        
+    .link {
+      fill: none;
+      cursor: pointer;
+      stroke-width: 3px; 
+    }
+
+    .link.inputs {
+/*        stroke: #03a303; */
+        stroke-width: 4px;        
+        stroke-dasharray: 4,2;       
+    }    
+
+
+    .drag-line {
+        stroke: steelblue;
+        stroke-width: 4px;
+        pointer-events: none; 
+        stroke-dasharray: 2,2;        
+    }
+ 
+    @keyframes aselector {
+        0%   {stroke-width: 7px; filter: saturate(300%); filter: brightness(100%); }
+        50%   {stroke-width: 3px; filter: saturate(20%); filter: brightness(70%);}
+        100%   {stroke-width: 7px; filter: saturate(300%); filter: brightness(100%); }
+        }
+
+    .selected {
+        animation-name: aselector;
+        animation-duration: 1s;
+        animation-iteration-count: infinite;
+    }    
+
+    .linkG .selected {
+        stroke-dasharray: 5,6;     
+    }   
+
+    .nodeG {
+        fill: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        cursor: pointer;
+    }        
+
+    .link.phase2 {
+        cursor: default;
+    }   
+    .node .phase2 {
+        opacity: 0.3;
+    }         
+
+    #form {        
+
+     text-align:center;
+     max-width:340px;
+     margin-top:15px;
+    }   
+
+    #container {        
+        flex: content;
+    
+    }  
+    
+    #formFields {        
+        margin:10px;   
+        text-align:right;
+        margin-right: 30px;
+    }     
+
+    .form-fields-names {
+
+        width:100px;
+        margin:10px;
+        text-align:right;
+    }    
+
+    .section {
+        margin:10px;
+        padding:10px;
+        text-align:center;
+    }    
+
+    .main {
+        display: flex;
+        flex-direction: column;
+        text-align:center;
+    }    
+
+    #node-header {
+        font-size:1.3em;
+        font-family:sans;
+    }    
+
+    #dataUpdateResult {
+        color: red;
+        font-size:1em;
+        font-family:sans;
+        padding:10px;
+    }    
+
+    .form-textarea {
+        height:90px;
+        width:200px;
+    }    
+
+    .form-select {
+        width:auto;
+        margin-top:10px;
+        margin-bottom:3px;
+    }    
+
+    .form-field-dynamic {
+        margin: 7px;
+        background-color:#eee;
+        padding:3px;
+    }    
+
+    #formf-sources, #formf-targets,  .pfield {
+        margin: 3px;
+        background-color:#ecb;
+        padding:3px;
+    }       
+    
+    .edge-type-parameter#formf-repository {
+        display: none;
+    }   
+
+    .node-type-template#formf-args {
+        display: none;
+    }      
+
+    #createNewForm {
+        width: 300px;
+        padding:20px;
+    }    
+
+    #createNewForm div {
+        margin:10px;
+        text-align:right;
+    }  
+    
+    #createNewHeader {
+        font-size: 1.2em;
+    }    
+
+    #phase2 {
+        display: none;
+    }   
+    
+    #messages {
+        font-size: 1.2em;
+        font-weight:bold;
+        color: red;
+    }    
+
+
+
+
+    </style>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+
+    <body>
+        <div class="main">
+            <div id="container">
+                <div id="phase1">
+                    <div>
+                        <input id="updateData" type="button" value="Save Data"><span id="dataUpdateResult"></span>
+                        <input id="compileData" type="button" value="Compile Data"><span id="dataCompileResult"></span>
+                    </div>
+                    <div>
+                        <input class="loadButtons" id="get2" type="button" value="Demo1">
+                        <input class="loadButtons" id="get3" type="button" value="Demo2">
+                        <input class="loadButtons" id="get4" type="button" value="Empty">
+                        <input id="createNew" type="button" value="Create New">
+                        <select name="dataSelector"></select>
+                        <div id="messages"></div>
+                    </div>
+                </div>
+                <div id="phase2">
+                    <div>
+                        <input id="updateDataYAML" type="button" value="Save Data (YAML)">
+                        <input id="graphBack" type="button" value="Back to Graph Edit">
+                        <div id="messages"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="form" class="hidden forms">
+                <form id="editForm">
+                    <div id="node-header"></div>
+                    <div id="formFields">
+                        <div class="section">
+                            <input id="reset" type="reset" value="Reset"/>
+                            <input id="update" type="button" value="Update"/>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="createNewForm" class="hidden forms">
+                <form id="createForm">
+                    <div id="createNewHeader">New graph metadata:</div>
+                    <div id="formFields">
+                        <div >Name: <input name="metadata.name" type="text"/></div>
+                        <div >Description: <input name="metadata.description" type="text"/></div>
+                        <div >Labels: 
+                            <textarea rows=6 cols=25 name="metadata.labels" type="text">{
+                                "test": "label",
+                                "label2": "b"
+                            }
+                            </textarea></div>
+                        <div class="section"><input id="createNewSave" type="button" value="Save"/></div>                        
+                    </div>    
+                </form>
+            </div>
+        </div>
+    <script>
+
+
+
+   
+
+class Graph {
+
+
+    constructor(container, width, height) {
+      
+        this.images = [
+            {type: "python", "color": "blue"},
+            {type: "nodejs", "color": "yellow"},
+            {type: "ubuntu", "color": "red"},
+            {type: "curl", "color": "gray"},
+            {type: "whalesay", "color": "cyan"}
+            ];
+
+
+        this.edgeTypes = [    
+            {"type": "parameter", "color": "blue"},
+            {"type": "artifact", "color": "gold"}
+        ];
+
+        this.nodeTypes = [    
+            {"type": "script"},
+            {"type": "template"}
+        ];
+
+
+        this.repType =  {
+            emptyDir: {
+                name: '',			
+				path: "/tmp"                
+            },
+            gcs: {
+                path: '',
+                secret: ''
+                },
+            ephemeral: {
+                name: '',
+                path: '',
+            },
+            nfs: {
+                name: '',
+                mountPath: '',
+                labels: '',
+                capacity: '',
+                accessModes: '',
+            }
+        };
+     
+        this.rootDir = ""//"jargon";
+
+        this.phase = 1;
+
+        this.defaultEdgeColor = 'gray';
+        this.margin = {top: 20, right: 90, bottom: 10, left: 50},
+        this.width = width - this.margin.left - this.margin.right,
+        this.height = height - this.margin.top - this.margin.bottom;
+
+        this.svg = d3.select(container).append("svg")
+         //   .attr("width", this.width + this.margin.left + this.margin.right)
+            .attr("height", this.height + this.margin.top + this.margin.bottom);
+        this.width = this.svg.node().clientWidth;
+       
+        this.g = this.svg.append("g")
+            .attr("transform","translate(" + this.margin.left + "," + this.margin.top + ")");
+
+        this.markerG = this.svg.append("defs");   
+
+        this.linkG = this.g.append("g").classed('linkG', true);
+        this.nodeG = this.g.append("g").classed('nodeG', true);
+
+        this.dragLine = this.g.append('path')
+	        .classed('drag-line hidden', true)
+            .style('marker-end', '')
+	        .attr('d', 'M0,0L0,0');
+
+        this.dataSrc = '';        
+        this.dataYAML = '';
+        this.nodes = [];       
+        this.links = [];
+        this.nodesByName = {};
+
+        this.node = '';
+        this.link = '';
+        this.marker = '';
+        
+        this.simulation = false;
+        this.mouseDownNode = false;
+        this.mouseDownLink = false;
+
+        this.tickTransitionDelay = 0;
+        this.doNotInclude = ['id','index','x','y','vx','vy','fx','fy'];
+
+
+        this.svg
+            .on('contextmenu', e => this.createNewNode(e))
+            .on('mousemove', e => this.mouseMoveEventGlobal(e)) 
+            .on('mouseup', e => this.mouseUpEventGlobal(e)) 
+
+
+        // handle page resizes, adjust svg size and nodes positions 
+
+        d3.select(window).on('resize', () => {
+
+            this.width = window.innerWidth;
+            this.svg.attr('width', this.width);
+            this.simulation
+                .alpha(0.2)
+                .force("x", d3.forceX( d =>  {
+                        return d.stype == 'parameter' ? (d.position == 'right' ? this.width - 100 : 0 ) : this.width/2;   })
+                    .strength(d => d.stype == 'parameter' ? 1 : 0.3 )
+                )
+                .nodes(this.nodes)
+                .restart();
+        }); 
+
+
+        d3.select("#updateData").on("click", () => {
+          console.log('Update data, phase='  + this.phase);            
+          const data = this.nodesToData();
+    //      return;
+          d3.json(this.rootDir+"/updateData", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then( (d) => {             
+                d3.select("#dataUpdateResult").html(d.data).style("opacity",1);
+                d3.select("#dataUpdateResult").transition().duration(2000).style("opacity",0).on('end', () => d3.select("#dataUpdateResult").html(''));
+            })                      
+        })   
+
+
+
+        d3.select("#updateDataYAML").on("click", () => {
+          console.log('Update data, phase='  + this.phase); 
+            const data = this.GraphToYAML();
+            d3.json(this.rootDir+"/updateDataYAML", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            }).then( (d) => {             
+                d3.select("#dataUpdateResult").html(d.data).style("opacity",1);
+                d3.select("#dataUpdateResult").transition().duration(2000).style("opacity",0).on('end', () => d3.select("#dataUpdateResult").html(''));
+            })                     
+        }) 
+
+        d3.select("#compileData").on("click", () => {
+          console.log('Compile data');  
+          d3.json(this.rootDir + "/compileData", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(this.nodesToData())
+            }).then( (d) => { 
+                if(0 && (d.error || d.stderr) ) {
+                  const text = "Error: code: " + d.error.code + ", text: " + d.error.cmd + " / " + d.stderr;  
+                    d3.selectAll("#messages").html(text).style("opacity",1);
+                    d3.selectAll("#messages").transition().duration(6000)
+                        .style("opacity",0).on('end', () => d3.select("#messages").html(''));
+                    
+                }else{
+                    const name = this.dataSrc.metadata.name;
+                    console.log('requesting ' + name);
+                 
+                    d3.timeout( () => { 
+                        d3.json(this.rootDir + '/getJAMLdataFile?data=' + name).then(d => { 
+                            console.log(d);
+                            if(d.error || d.stderr ) {
+                                const text = "Error: " + ( d.error ? " code: " + d.error.code + ", text: " + d.error.cmd : "" ) + d.stderr;  
+                             d3.selectAll("#messages").html(text).style("opacity",1);
+                                d3.selectAll("#messages").transition().duration(6000)
+                                    .style("opacity",0).on('end', () => d3.select("#messages").html(''));
+                            }else{
+                                this.dataYAML = d;
+                                this.initData(true);
+                                d3.select("#updateData").attr("value","Save Data [" + ( this.dataYAML.metadata.name ) + ".yaml]") 
+                                this.YAMLtoGraph(); 
+                                console.log(this.dataYAML);
+                                this.drawGraph();
+                                this.gotoPhase2();
+                            }
+                        }) 
+                    }, 1000);     
+                    
+                   // d3.timeout(readYAML,1000);
+                 // this.dataToNodes(d);
+                    //d3.select("#updateData").attr("value","Save Data [" + this.dataSrc.metadata.name + ".json]") 
+                  //this.drawGraph() })    
+                        
+               
+                }                      
+            })  
+        })
+
+        d3.select("#createNew").on("click", () => {
+            console.log('Create New');  
+            d3.select("#form").classed("hidden", true);
+            d3.select("#createNewForm").classed("hidden", false);
+            //this.dataToNodes({ nodes: [], edges: [] });
+            this.initData(true);         
+        })  
+        
+        d3.select("#createNewSave").on("click", () => {
+            d3.select("#createNewForm").classed("hidden", true);
+            const form = d3.select("#createForm"),
+                els = form.selectAll("input,textarea"),
+                data = this.dataSrc;
+
+            data.metadata = {};
+
+            els.each(function() {
+                const el = d3.select(this);
+                const v = el.property("value"),
+                    name  = el.attr("name");
+                if(!name) return;
+                let dp = data, dpl = {}, pd;
+                (name + '.#').split('.').forEach(d => {
+                    if(d === '#') dpl[pd] = v.match(/^\s*[{[]/) ? JSON.parse(v) : v;
+                    else {
+                        if(!dp[d]) dp[d] = {};
+                        dpl = dp;
+                        dp = dp[d];
+                        pd = d;                    
+                    }                   
+                })  
+            })    
+            if(!data.metadata.name) data.metadata.name = 'newname'; 
+            d3.select("#updateData").attr("value","Save Data [" + data.metadata.name + ".json]")
+    
+        })         
+        
+
+        d3.selectAll(".loadButtons").on("click", (d) => {
+
+            d3.select("#createNewForm").classed("hidden", true);
+
+            const tid = 'data/' + (d ? d.target.id : '');
+            this.initData(true);
+            d3.json(tid).then(d => { 
+                this.dataToNodes(d);
+                d3.select("#updateData").attr("value","Save Data [" + this.dataSrc.metadata.name + ".json]") 
+                this.drawGraph() })                                
+        })        
+        
+        
+        d3.selectAll("#graphBack").on("click", (d) => {
+          this.gotoPhase1();  
+        })      
+
+
+      //  d3.select(".loadButtons").on("click").apply(this); /// auto-click first button
+
+        d3.json(this.rootDir + "/getlist").then(d => { 
+                const re = /.json/g;
+                const files = d.data.replace(re,'').split(',');
+                files.unshift("select data file")
+
+                d3.select('[name="dataSelector"]')
+                .on('change', (e,d) => {
+                    d3.select("#createNewForm").classed("hidden", true);                                        
+                    const index = e.srcElement.selectedIndex,
+                        opt = e.srcElement[index].value;
+                        if(index) {
+
+                            d3.json(this.rootDir + '/getdataFile?data=' + opt).then(d => { 
+                                console.log(this.dataSrc.nodes);
+                                this.initData();
+                                console.log(this.dataSrc.nodes);
+                                this.dataToNodes(d);
+                                d3.select("#updateData").attr("value","Save Data [" + ( this.dataSrc.metadata?.name || opt) + ".json]") 
+                                this.drawGraph() 
+                            })       
+                        }    
+
+                })
+                .selectAll("option").data(files)
+                .join("option")
+                    .attr("value", d => d)
+                    .html(d => d)                             
+        })          
+        
+    }
+
+    gotoPhase2 = () => {        
+        d3.select("#phase2").style("display","block");   
+        d3.select("#phase1").style("display","none");   
+
+        this.phase = 2;
+        this.initData(true);            
+        this.dataToNodes();        
+        this.drawGraph()  
+        d3.selectAll(".node").style('opacity', 0.5).style('fill', 'brown').style('stroke-width', 7);       
+    }   
+
+    gotoPhase1 = () => {        
+        d3.select("#phase1").style("display","block");   
+        d3.select("#phase2").style("display","none");
+  
+        this.phase = 1;
+        this.initData(true);            
+        this.dataToNodes();        
+        this.drawGraph()  
+        d3.selectAll(".node").style('opacity', 1).style('fill', '').style('stroke-width', '');
+    }   
+
+
+    initData = (reset = false) => {
+        
+            this.nodes = [];
+            this.links = [];
+            this.linkColors = [];
+            this.nodesByName = {};
+        
+            if(this.simulation) this.simulation.stop();
+            if(!reset) {
+                this.dataSrc = { metadata: {}, nodes: this.nodes, edges: this.links }
+            }    
+            d3.select("#form").classed("hidden", true)
+            this.drawGraph();
+            this.simulation = false;
+        }  
+
+
+  
+    createNewNode(e) {
+
+        e.preventDefault();
+        const lastId = +d3.max(this.nodes, d => d.id) || 0;
+        const newNode = { id: 1+lastId, 
+                radius: 25, 
+                type: "script",
+			    imageName: "python",
+			    args: "",
+                opacity: 1,
+                name: 'newNode_' + (1+lastId), 
+                x: e.offsetX, y: e.offsetY, 
+                fx: e.offsetX, fy: e.offsetY };
+        this.nodes.push(newNode);
+        this.dataSrc.nodes.push(newNode);
+        if(this.simulation) this.simulation.stop();
+        this.drawGraph();
+        this.simulation.restart();
+
+    }    
+
+    nodesToData() { // prepare node/edges data to export into json structure
+        const data = this.dataSrc;
+        data.nodes = [];
+        if(data.links) delete data.links;
+        data.edges =  []; // JSON.parse(JSON.stringify(this.links));
+        const newEdges = [];
+        const filtered = this.doNotInclude.filter(d => d != 'id')
+        this.nodes.filter(d => !d.stype).forEach(d => { // filter out all "extra" fake nodes like "parameter" and "point"
+            const o = {};            
+            Object.keys(d).filter(d => 0 > filtered.indexOf(d)).forEach(c => o[c] = d[c]);
+            data.nodes.push(o);
+        })   
+
+        this.links.forEach(d => {
+           //  if(d.source.stype == 'parameter') return; // skip metadata inputs
+            const edge = d.edge ? d.edge : {};
+            if(!data.edges.find(dd => dd === edge)) {
+                data.edges.push(edge);
+                edge.sources = [];
+                edge.targets = [];
+            } 
+            if(!edge.sources) edge.sources = [];   
+            if(!edge.targets) edge.targets = [];   
+
+            if(d.sdata) {
+                edge.sources.push(d.sdata);
+            }    
+            if(d.tdata) {
+                edge.targets.push(d.tdata);
+            }    
+
+        })    
+ 
+        console.log('data for export', data);
+        return data;         
+    }    
+
+    YAMLtoGraph(xdata = false) { // convert YAML file structure into graph representation
+
+        const data = xdata || this.dataYAML;
+        this.nodesByName = {};
+        console.log(data)
+        this.dataSrc = {
+            metadata: data.metadata, 
+            nodes: data.spec.templates.filter(d => d.container) ,
+            edges: []
+        }    
+
+        data.spec.templates.forEach(d => this.nodesByName[d.name] = d);
+
+        return this.dataSrc;
+    }  
+    
+     
+    GraphToYAML() { // update YAML data structure before saving into file
+
+        this.dataSrc.nodes.forEach(d => {
+            const dd = this.dataYAML.spec.templates.find(n => n.name == d.name);
+          //  console.log(dd,d);
+            if(dd.script)  { 
+                dd.script.args = d.script.args;
+                if(d.script.source) dd.script.source = d.script.source;
+            }    
+            if(dd.container)  dd.container.args = d.container.args;
+        })
+        return this.dataYAML;
+    }    
+
+
+
+    dataToNodes(xdata) {
+        
+        if(xdata) {
+            this.dataSrc = xdata
+        }
+        const data = this.dataSrc;  
+
+        this.nodesByName = {};
+        this.links = [];
+
+        this.nodes = this.dataSrc.nodes.map(d => { 
+            d.radius = 25;            
+            if(d.name === undefined) d.name = d.id;
+            return d;
+        });         
+
+        if(data.metadata?.arguments?.parameters) {
+            data.metadata.arguments.parameters
+                .forEach((d,i) => this.nodes.push(
+                    {
+                        id: 's' + this.nodes.length, 
+                        position: data.metadata.arguments.parameters.length-1 == i && i > 1? 'right' : undefined,
+                        x: data.metadata.arguments.parameters.length-1 == i && i > 1? this.width-100: 15, 
+                        y: this.height/2, 
+                        stype: 'parameter', 
+                    // name: 'workflow-' + d.name, 
+                        name:  d.name, 
+                        value: d.value}
+                    ))            
+        }    
+        this.nodes.forEach(d => this.nodesByName[d.name] = d);
+
+      //  console.log(this.nodes);
+
+   ///     console.log(this.nodesByName, this.nodes)
+        this.dataSrc.edges.forEach(d => {     
+            let name;
+            if(!d.sources) {
+                if(d.source) {
+                    const node = this.nodes.find(dd => dd.id == d.source)
+                    console.log(d.source)
+                    name = node.name;
+                }else{
+                    name = 'unknown';
+                }        
+                d.sources = [ { 
+                "template": name , //imageName,
+					"config": {
+						name: name ,
+						path: "output",
+                        value: ""
+                    }    
+                }];
+            }else if(d.sources[0] === undefined) { // fix to handle sources entered as Object and not an array of objects
+                d.sources = [d.sources];                 
+            }
+
+            if(!d.targets) {
+                if(d.target) {
+                    const node = this.nodes.find(dd => dd.id == d.target)
+                    name = node.name;
+                }else{
+                    name = 'unknown';
+                }        
+
+                d.targets = [ {
+                "template": name, //d.target.imageName,
+					"config": {
+						name: name,
+						path: "input",
+                        value: ""
+                    }
+                }];
+            }else if(d.targets[0] === undefined) { // 
+                d.targets = [d.targets];                 
+            }
+
+            d.sources.forEach(dd => {
+                let source = dd.template;
+                //if(source == 'workflow') source += '-' + dd.config.name;
+                if(source == 'workflow') source = dd.config.name;                
+                if(this.nodesByName[source] === undefined) {
+                    console.log('Missing source node: ' + source + '!!');
+                    return;
+                }
+                const sourceNode = this.nodesByName[source];              
+                let fnode = false;                     
+                d.targets.forEach((ddd,i) => {
+                    const target = ddd.template;
+                    if(this.nodesByName[target] === undefined) {
+                        console.log('Missing target node: ' + target + '!!');
+                        return;
+                    }   
+                    const targetNode = this.nodesByName[target];                             
+                    if(d.targets.length > 1) {      
+                        if(i == 0) { // first entry
+                            fnode = { id:  Math.random(), x: (sourceNode.x+targetNode.x)/2, y: (sourceNode.y+targetNode.y)/2, spow: 50, name: source +'_' + target, stype: 'point', radius: 0, source : sourceNode, target: targetNode };
+                            this.nodesByName[fnode.name] = fnode;
+                            this.nodes.push(fnode);
+                            console.log();
+                            this.links.push({ ind: i, sdata: dd,  multi : true, source: sourceNode, target: fnode, edge: d, id: Math.random()})                                
+                        }
+
+                        this.links.push({ ind: i+1, tdata: ddd, multi : true, source: fnode, target: targetNode, edge: d, id: Math.random()})
+                            
+                    }else{
+                        this.links.push({ sdata: dd, tdata: ddd, source: sourceNode, target: targetNode, edge: d, id: Math.random()})                                                
+                    }    
+                })    
+            })                         
+        });
+
+        console.log(this.links)
+        console.log(this.nodes)
+        this.linkColors = [... this.edgeTypes.map(d => d.color),'steelblue',this.defaultEdgeColor, '#03a303'];
+
+        //this.linkColors = [...new Set(this.links.map(d => this.edgeTypes.find(dd => d.type == dd.type)?.color )), 
+         //   'steelblue',this.defaultEdgeColor, '#03a303'].filter(d => d);
+
+//        console.log(this.nodes, this.dataSrc.nodes);
+    }    
+    
+    initSim(alpha = 0.7) {
+
+        this.simulation = d3.forceSimulation(this.nodes)
+            .force("link", d3.forceLink(this.links).id(d => d.id))
+            .force("charge", d3.forceManyBody().strength(d => d.stype == 'point' ? 500 : 0 ))
+            //.force("x", d3.forceX( d =>  d.stype == 'parameter' ? 0 : this.width/2 )
+              //      .strength(d => d.stype == 'parameter' ? 1 : 0.3 ))
+            .force("x", d3.forceX( d =>  {
+                return d.stype == 'parameter' ? (d.position == 'right' ? this.width  : 0 ) : this.width/2;   })
+                    .strength(d => d.stype == 'parameter' ? 1 : 0.3 )
+                )
+            .force("y", d3.forceY(this.height/2))
+            .force('collide', d3.forceCollide(d => d.stype == 'point' ? 15: 65))
+            .velocityDecay(0.3)
+            .alpha(alpha)
+            .alphaDecay(0.05)
+            .on("end", this.nodes.forEach(d => { if(d.stype == 'parameter') d.fx = d.x;})) 
+    }    
+
+    loadData(file) {
+        d3.json(file).then(d => {
+        
+            this.initData();
+            this.dataToNodes(d);
+            d3.select("#updateData").attr("value","Save Data [" + ( this.dataSrc.metadata?.name || opt) + ".json]") 
+            this.drawGraph() 
+            
+        })
+    }
+    
+    
+    linkArc = d =>`M${d.source.x},${d.source.y}A0,0 0 0,1 ${d.target.x},${d.target.y}`
+
+    linkArcUni = (d, fixCoords = false) =>  {
+        fixCoords = false;
+		const rB1 = d.source.radius || d.source.width || 1,
+			rB2 = d.target.radius || d.target.width || 1,
+			rA1 = d.source.radius || d.source.height || 1,
+			rA2 = d.target.radius || d.target.height || 1;
+
+        let
+            sx = fixCoords ?  d.source.x + this.margin.left : d.source.x,
+            tx = fixCoords ?  d.target.x + this.margin.left : d.target.x,
+            sy = fixCoords ?  d.source.y + this.margin.top : d.source.y,
+            ty = fixCoords ?  d.target.y + this.margin.top : d.target.y;
+
+        if(d.source.stype == 'parameter') {
+           // sx = d.source.x + 25;    
+                sy = d.source.y + 25;  
+        }
+           
+     /*   if(d.target.position == 'right') {
+                tx = d.target.x -60;
+        }
+
+		*/
+
+		const deltaX = tx - sx,
+			deltaY = ty - sy,
+			alfa = Math.atan( deltaX / deltaY );
+        
+		const dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY) ,
+			normX = deltaX / dist,
+			normY = deltaY / dist;
+        
+		const r1 = 1 / Math.sqrt( Math.pow( Math.sin( alfa) / rB1, 2) + Math.pow( Math.cos( alfa) / rA1, 2) ),        
+			r2 = 1 / Math.sqrt( Math.pow( Math.sin( alfa) / rB2, 2) + Math.pow( Math.cos( alfa) / rA2, 2) ),                
+            
+			sourcePadding = d.source.stype == 'parameter' ? 25: d.source.stype == 'point' ? 0: r1 +3,
+			targetPadding = d.target.stype == 'point' ? 0: r2 +8,
+        
+			sourceX = sx + (sourcePadding * normX),
+			sourceY = sy + (sourcePadding * normY),
+			targetX = tx - (targetPadding * normX),
+			targetY = ty - (targetPadding * normY);
+        // console.log(r1,r2, sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY)
+    
+		return r1 ? 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY : `M${d.source.x},${d.source.y}A0,0 0 0,1 ${d.target.x},${d.target.y}` ;
+  }
+
+
+    clamp = (x, lo, hi) => x < lo ? lo : x > hi ? hi : x
+
+    drawGraph(restart) {
+        const that = this;
+
+        if(!this.simulation) this.initSim(restart ? 0.1 : 0.7);
+
+        function dragstart() {
+            d3.select(this).classed("fixed", true).raise();
+            that.resetMouseVars();
+        }
+
+        function dragend() {
+           //  console.log('dragstop')
+            d3.select(this).classed("fixed", true);
+        }
+
+        function dragged(event, d) {
+            d.fx = that.clamp(event.x, 0, that.width);
+            d.fy = that.clamp(event.y, 0, that.height);
+            that.simulation.alpha(0.1).restart();
+        }
+
+        this.drag = d3
+            .drag()
+            .on("start", dragstart)
+            .on("drag", dragged)
+            .on("end", dragend);
+
+        this.marker = this.markerG.selectAll("marker")
+            .data(this.linkColors, d => d )
+            .join(
+                enter => enter.append("marker")
+                    .attr("id", d => 'arrow-' + d.replace('#',''))
+                    .attr("viewBox", "0 -5 10 10")
+                    .attr("refX", 7)
+                    .attr("refY", 0)
+                    .attr("markerWidth", 3)
+                    .attr("markerHeight", 3)
+                    .attr("orient", "auto")
+                    .each(function(d) {
+                        const el = d3.select(this);
+                        el.append("path")
+                            .attr("fill", d => d)
+                            .attr("d", 'M0,-5L10,0L0,5')
+                    })
+                                  
+              ,
+                update => update,
+                // exit => exit.transition().duration(200).style('opacity',0).remove()
+                exit => exit.remove()
+            )   
+
+        this.link = this.linkG.selectAll(".link")
+            .data(this.links, d => [d.source.name,d.target.name])
+            .join(
+                enter => 
+                    enter.append("path")
+                        .each(d => {
+                            if(d.source.stype == 'parameter') {
+                                d.color = '#03a303'; 
+                            }else{    
+                                d.color = this.edgeTypes.find(dd => dd.type == d.type)?.color || this.defaultEdgeColor;
+                            }    
+                            d.marker = d.target.stype == 'point' ? '': d.color.replace('#','');
+                            console.log('color', d.color)
+                        })
+                        .classed('link', true)
+                        .classed('phase1', this.phase == 1)
+                        .classed('phase2', this.phase == 2)
+                        .classed('inputs', d => d.source.stype == 'parameter')
+                        .on('click',(d,e) => this.editLink(d,e))      
+                        .on('mousedown',(d,e) => this.mouseDownLinkEvent(d,e))                  
+                        .attr("stroke", d => d.color)
+                        .attr("stroke-width", d => d.width || 1)
+                        .attr("opacity", d => d.opacity || 1)
+                        .attr("linecap", d => d.linecap || '')
+                        .attr("marker-end", d => d.source.y !== d.target.y ? `url(${new URL(`#arrow-${d.marker}`, location)})` :'')
+                        .call(d => d.append("title")
+                            .text("click to Edit edge parameters or Remove edge")),
+                update => update
+                        
+                        .each(d => {
+                            if(d.source.stype == 'parameter') {
+                                d.color = '#03a303'; 
+                            }else{    
+                                d.color = this.edgeTypes.find(dd => dd.type == d.type)?.color || this.defaultEdgeColor;
+                            }    
+                            d.marker = d.target.stype == 'point' ? '': d.color.replace('#','');
+                            console.log('color', d.color)
+                        })
+                
+                        .attr("stroke", d => d.color)
+                        .attr("stroke-width", d => d.width || 1)
+                        .attr("opacity", d => d.opacity || 1)
+                        .attr("linecap", d => d.linecap || '')
+                        .attr("marker-end", d => d.source.y !== d.target.y ? `url(${new URL(`#arrow-${d.marker}`, location)})` :''),                                      
+                exit => exit.remove()
+
+            )     
+
+        this.node = this.nodeG.selectAll(".node")
+            .data(this.nodes, d => d.id )
+            .join(enter => 
+                enter.append("g")
+                    .attr('id', d => 'node-' + d.id)
+                    .classed('node', true)
+                    .classed('phase1', this.phase == 1)
+                    .classed('phase2', this.phase == 2)
+
+                    .call(this.drag)                    
+                    .on('mousedown',(d,e) => this.mouseDownNodeEvent(d,e))
+                    .on('mouseup',(d,e) => this.mouseUpNodeEvent(d,e))
+                    .on('mousemove',(d,e) => this.mouseMoveNodeEvent(d,e))
+                    .on('click',(d,e) => this.editNode(d,e))
+                    .each(function(d) {
+                        const el = d3.select(this);
+                        if(d.stype == 'point') {
+                            d.radius = 0;
+                            el.append("circle")
+                            //.attr("stroke", d => that.images.find(dd =>  dd.type === d.imageName  )?.color || 'blue' )
+                            .attr("fill", d => 'gray')
+                            .attr("opacity", d => 0)
+                            .attr("stroke-width", d => d.strokewidth || 1.5)
+                            .attr("r", 2)
+                            .lower()
+                            .append("title")
+                                .text(d => "id=" + d.id + ", click to edit node, CTRL+mouse to connect to another node")
+                            return;    
+                        }    
+                        if(d.stype == 'parameter') {
+                            d.radius = 0;
+                            d.width = 50;
+                            d.height = 25;
+                            el.append("text")
+                                .attr("dx", -d.width/2)
+                                .attr("x", d.width/2-10)
+                                .attr("y", -1)
+                                .text(d => d.name )
+                                .clone(true).lower()
+                                .attr("fill", "none")
+                                .attr("stroke", "white")
+                                .attr("stroke-width", 3);
+
+                            el.append("image")
+                                .attr('x',-d.width/2-5)
+                                .attr('width', d.width)
+                                .attr('height', d.width)
+                                .attr("xlink:href", "https://img.icons8.com/external-kiranshastry-gradient-kiranshastry/64/000000/external-image-multimedia-kiranshastry-gradient-kiranshastry-5.png")
+                                .append("title")
+                                    .text(d => d.name + '=' + d.value)        
+                            
+                            return;    
+                        }    
+                        
+                        if(that.phase == 1) {
+                            d.radius = d.type == 'script' ? 25: 15;
+                        }else{
+                            d.radius = d.script !== undefined ? 30: 17;
+                        }    
+                        el.append("text")
+                            .attr("x", d => +d.radius + 3)
+                            .attr("y", "0.31em")
+                            .text(d => d.name)
+                            .clone(true).lower()
+                            .attr("fill", "none")
+                            .attr("stroke", "white")
+                            .attr("stroke-width", 3);
+                        el.append("circle")
+                            .attr("stroke", d => d.imageName && that.images.find(dd =>  dd.type === d.imageName  )?.color || 'blue' )
+                            .attr("fill", d => d.imageName && that.images.find(dd => dd.type === d.imageName)?.color || 'blue')                            
+                            .attr("opacity", d => d.opacity || 1)
+                            .attr("stroke-width", d => d.strokewidth || 1.5)
+                            .attr("r", d => d.radius)
+                            .lower()
+                            .append("title")
+                                .text(d => that.phase == 1? 
+                                            "id=" + d.id + ", click to edit node, CTRL+mouse to connect to another node" :
+                                            (d.script ? d.name + " (script)" : d.name + " (template)")
+                                    )
+                    }),
+                    update => update
+                        .each(function(d) {
+                            if(d.stype ) return;
+                            d.radius = d.type == 'script' ? 25: 15;
+                            const el = d3.select(this);
+                        el.selectAll("text")
+                            .transition().duration(200)
+                            .text(d => d.name)           
+                            .attr("x", d => +d.radius +3)      
+                        el.select("circle")
+                            .transition().duration(200)
+                            .attr("opacity", d => d.opacity || 1)
+                            .attr("stroke-width", d => d.strokewidth || 1.5)
+                            .attr("r", d => d.radius)
+                            .attr("stroke", d => d.imageName && that.images.find(dd => dd.type === d.imageName).color || 'blue')
+                            .attr("fill", d => d.imageName && that.images.find(dd => dd.type === d.imageName).color || 'blue')                            
+
+                    }),
+                    //exit => exit.transition().duration(200).style('opacity',0).remove()
+                    exit => exit.remove()
+                    
+                    
+            )
+       
+        this.simulation.on("tick", () => {
+      
+            this.node.attr("transform", d => {
+                d.x = this.clamp(d.x, 0, this.width - 100);
+                d.y = this.clamp(d.y, 0, this.height);      
+             //   if(d.source ) d.x = this.clamp(d.x, d.source.x || 0, this.width);
+             //   if(d.target ) d.target.x = this.clamp(d.target.x, d.x+25, this.width);
+             //   console.log('tick',d.x)
+                return `translate(${d.x},${d.y})`
+            
+            }    );
+            this.link.transition().duration(this.tickTransitionDelay).attr("d", this.linkArcUni);             
+               
+        });    
+
+    }
+
+
+    spliceLinksForNode = (node) => {
+	    const toSplice = this.links.filter(d => d.source === node || d.target === node);
+	    toSplice.forEach(d => this.links.splice(this.links.indexOf(d), 1));
+    }
+
+
+    makeMenuEdge(el, values, field, value, e, dd) {
+        const f = d3.select("#formFields");
+        const that = this;
+        const sel = el.append("select").attr('name', field).classed('form-select', true).on("change", function(d) {            
+            const  el = d3.select(this),
+                index = sel.node().selectedIndex,
+                ff = 'formf-repository';
+            if(values[index][field] == 'artifact') {
+                f.select("#" + ff).classed('hidden', false);
+            }else{
+                f.select("#" + ff).classed('hidden', true);                                
+            }    
+            console.log(e,values[index][field]);
+            e.type = values[index][field];
+            that.parametersForm(el, 'sources', e);
+            that.parametersForm(el, 'targets', e);
+            that.editLink(dd,e)
+        });
+        values.forEach(d => {
+            sel.append("option").attr("value", d[field]).html(d[field]).property("selected", value === d[field])
+        })    
+        //sel.on("change").apply(this);
+    }    
+
+    makeMenu(el, values, field, value, fieldName, callback) {
+
+        const f = d3.select("#formFields");
+        const sel = el.append("select").attr('name', fieldName? fieldName : field).classed('form-select', true).on("change", function(d) {            
+            const  el = d3.select(this),
+                index = sel.node().selectedIndex;
+
+                console.log('selected item:' + index, values[index][value])
+                if(callback) (callback)(values[index]);                         
+        });
+        values.forEach(d => {
+            sel.append("option").attr("value", d[field]).html(d[field]).property("selected", value === d[field])
+        })    
+    }        
+
+
+    artifactForm(el, rep_data) {
+
+        const that = this;
+        const fields = Object.keys(this.repType); //[ {name: 'emptyDir' }, {name: 'gcs' }, {name: 'nfs' }, {name: 'ephemeral'}];
+        
+        const type = rep_data.type,
+            field = 'repository-type'; 
+
+        let ftype = undefined;    
+
+      //  console.log('type = ' + type, fields);
+
+        const f = d3.select("#formFields");
+        f.select("[name='" + field + "']").remove().html("");
+
+        const sel = el.selectAll('.repository-form').data([1]).enter().append("select").attr('name', field).classed('form-select', true).on("change", function(d) {            
+            const  el = d3.select(this),
+                index = sel.node().selectedIndex,
+                ff = 'formf-repository-type',
+                fn = fields[index];
+ //               console.log('rep_data-type =',rep_data.type,fn); 
+
+                if(fn == rep_data.type) {
+                    ftype = rep_data.params;
+                }else{
+                    ftype = that.repType[fn]    
+                }    
+
+                rep_data.type = fn;
+
+                const fk = Object.keys(ftype);
+
+
+               // that.parametersForm(el, d, e));
+
+                const fc = elx.selectAll("div")
+                .data(fk, d => d)
+                .join(enter => {
+                        const  el = enter.append("div")
+                        el.text(d => d + " : ")
+                        el.append("input").attr("name", d => "repository-" + d).property("value", d => {
+                            let vv = ftype[d];
+                        //    console.log(d,': value ' + vv);
+
+                            if(typeof vv == 'object') {
+                                vv = JSON.stringify(vv);
+                            }          
+                            return vv;
+                        } )
+                    }/*,
+                    update => update,
+                    exit => exit.remove()                
+                       */         
+                )
+                       
+        });
+        const elx =  el.append("div").classed("form-field-dynamic",true);
+
+        fields.forEach(d => {
+            sel.append("option").attr("value", d).html(d).property("selected", type === d)
+        })
+
+        sel.on("change").apply(this);
+        
+        return el
+
+    }    
+
+
+    parametersForm(el, type, e) {
+
+        const that = this,
+            index = 0,
+            // values = e[type][index].config || {};
+            values = e.config || {};
+            values.template = e.template;
+        let fields, fname = type + "-config";
+ console.log('template =' + values.template)
+        if(e.type == 'artifact') {
+            if(type == 'sources') {
+                fields =[ 'template', 'name','path' ];
+            }else{ // targets
+                fields =[ 'template','name','path', 'from' ];
+            }
+        }else{
+            fields = [ 'template', 'name','value'];               
+        }    
+
+        const fn = 'config-form-' + type + '-index';
+
+        el.selectAll('.' + fn).remove().html("")
+
+        const epart = el.selectAll('.' + fn).data([1]).enter()
+            .append("div").attr('id', fname)   
+            .datum(fields)         
+            .classed('edges-only-fields config-form-' + type + ' ' + fn, true)
+
+        epart    .append("div").html( type == 'sources' ? 'Source' : 'Target')
+
+    
+     //   const sel = epart.selectAll('.pfield')
+            
+
+            const fc = epart.selectAll(".pfield")
+                .data(fields, d => d)
+                .join(enter => {
+                        const  el = enter.append("div")
+                        el.classed('pfield', true)
+                       // .classed(d => 'f-' + type + '-' + d, true)
+                        el.text(d => d + " : ")
+                        el.append("input").attr("name", d => type + "-config-" + d + '-' + index).property("value", d => {
+                            const val = values[d];
+                            console.log(d,': value ' + val);
+
+                            if(typeof val == 'object') {
+                                val = JSON.stringify(val);
+                            }          
+                            return val;
+                        } )
+                }     
+        )
+        return el;
+    }
+
+
+
+    editLink = (de,ee) => {
+
+        this.resetMouseVars();
+        this.mouseDownLink = ee;
+        console.log('mouseDownLink=',ee);
+
+        const that = this;
+        const e = ee.edge;
+        const f = d3.select("#formFields");
+        const sourceTargets = ['sources','targets'];
+
+        this.linkG.selectAll(".link").classed('selected', n => n === ee);
+        this.nodeG.selectAll(".node").classed('selected', false);
+
+        f.selectAll(".fields").remove();
+        f.selectAll(".edges-only-fields").remove();
+        // f.html('');
+
+
+        if(e.type == 'artifact' && !e.repository) {
+            e.repository = { type: 'gcs', config: this.repType.gcs }
+        }    
+        
+        d3.select("#form").classed("hidden", false).selectAll('.remove-button').data(['edge'])
+            .join("input").classed('remove-button',true).attr("type","button")
+                .attr("value",d => "Remove " + d)
+                .on('click', (d) => {
+                    this.links.splice(this.links.indexOf(e), 1);
+                this.drawGraph();              
+            });
+
+        d3.select("#node-header").html('Edge ' + ee.source.name + ' --> ' + ee.target.name)
+
+        const editableFields =  Object.keys(e).filter(d => 0 > [...this.doNotInclude, 'ind', 'multi', 
+        'sources','targets','marker', 'source','target','width','color','linecap', 'opacity'].indexOf(d));
+  //      const editableFields =  Object.keys(e).filter(d => 0 > ['source','target','id','index','style','opacity','radius','strokewidth'].indexOf(d));
+    console.log(editableFields,e);
+        const fields = f.selectAll(".fields")
+            .data(editableFields, d => d)
+            .join(enter => 
+                enter.append("div")
+                    .classed('fields', true)
+                    .classed('edge-type-' + e.type, true)
+                    .attr('id', d => 'formf-' + d)                     
+                    .each(function(d) {
+                        const el = d3.select(this);
+                        el.append("span")
+                            .classed('form-fields-names', true)
+                           // .classed('hidden', d => d === 'repository' && e.type != 'artifact')
+                            .text(d => d)
+                            
+                        if(d === 'repository') {
+                            if( e.type === 'artifact') {
+                                el.call(dd => that.artifactForm(dd, e.repository));
+                                return el;
+                            }                              
+                        } 
+    
+                        if(typeof e[d] === 'object') {
+                            console.log(d)
+                            switch(d) {
+                              /*  case 'sdata':
+                                    el.call(dd => that.parametersForm(el, d, e));
+                                    return el;
+                                case 'tdata':
+                                    el.call(dd => that.parametersForm(el, d, e));
+                                    return el;*/
+                                case 'repository':
+                                    if( e.type === 'artifact') {
+                                        el.call(dd => that.artifactForm(dd, e.repository));
+                                        return el;
+                                    }
+                                default:
+                                    el.append("textarea")
+                                        .classed('form-textarea', true)
+                                        .property("value", d => JSON.stringify(e[d]))
+                                        .attr("name", d => d)    
+                            }           
+                                                                                        
+                            return el;
+                        } 
+                        
+                        switch(d) {
+                                case 'type':                            
+                                    el.call(dd => that.makeMenuEdge(dd,that.edgeTypes,'type', e[d],e, de));
+                                    break;
+                                 default:      
+                                    el.append("input")
+                                        .attr("value", d => e[d])
+                                        .attr("name", d => d)
+                        }                                   
+                        return el;     
+                })
+            )
+
+        if(ee.sdata) {
+            that.parametersForm(f, 'sources', ee.sdata);
+        } 
+        if(ee.tdata) {
+            that.parametersForm(f, 'targets', ee.tdata);
+        }                  
+
+        f.select("#update").on("click", d => {
+            d3.select("#form").classed("hidden", true);
+            editableFields.forEach(d => {
+                    const fv = f.select("[name=" + d + "]");
+                    if(fv.size()) {
+                        const val = fv.property("value");                        
+                        if(typeof e[d] === 'object') {
+                            e[d] = JSON.parse(val);
+                        }else{    
+                            e[d] = val;
+                        }
+                    }else{
+                     console.log('field: ' + d + ' is not defined');   
+                    }    
+            })
+            sourceTargets.forEach(dd => {
+
+                const ff = f.select('.config-form-' + dd);
+                if(!ff.size()) return;
+                const fields = ff.datum();
+                const index = 0;
+                fields.forEach(d => {
+                    const fn = dd + "-config-" + d + '-' + index,
+                    fv = f.select("[name='" + fn + "']").property("value");
+                    console.log(fn,fv);
+                    const fdd = dd == 'sources' ? ee.sdata : ee.tdata;
+                    console.log(fdd)
+                    if(d == 'template') { if(fdd.config[d]) delete fdd.config[d]; fdd.template = fv; }
+                    else fdd.config[d] = fv; 
+               //     e[dd][index].config[d] = fv;
+                })                                                
+            })
+            
+            if(e.type == 'artifact') {
+                const repo = e.repository.type;
+                e.repository.params = this.repType[repo];
+                for(let i in e.repository.params) {
+                    const el = f.select("[name='repository-" + i + "']");
+                    if(el.size()) {
+                        e.repository.params[i] = el.property("value");
+                    }else{
+                        
+                     console.log("[name='repository-" + i + "']", 'not defined')   
+                    }    
+                }    
+                e.repository.type = f.select("[name='repository-type']").property("value");
+                console.log('repo type ' + e.repository.type)
+            }else{
+                 if(e.repository) delete(e.repository);   
+            }    
+ 
+            this.drawGraph();         
+            this.tickTransitionDelay = 250;
+            this.simulation.restart();    
+            this.tickTransitionDelay = 0;
+        })                          
+    }    
+
+    editNode = (d,e) => {
+
+        this.resetMouseVars();
+
+        this.linkG.selectAll(".link").classed('selected', false);
+        this.nodeG.selectAll(".node").classed('selected', n => n === e);
+        let editableFields;
+
+        const f = d3.select("#formFields"),
+            that = this;
+        f.selectAll(".fields").remove();
+        f.selectAll(".edges-only-fields").remove();
+   //     d3.select("#form").select('.remove-button').remove();
+        d3.select("#node-header").html('Node ' + e.name)
+
+        const rem_button = this.phase == 1 ? ['node'] : [];
+        d3.select("#form").classed("hidden", false).selectAll('.remove-button').data(rem_button)
+            .join("input").classed('remove-button',true).attr("type","button")
+                .attr("value",d => "Remove " + d)
+                .on('click', (d) => {
+                    this.spliceLinksForNode(e)                    
+                    this.nodes.splice(this.nodes.indexOf(e), 1);
+                    console.log(' remove node', e, this.nodes)
+                this.drawGraph();              
+            });
+
+        if(this.phase == 1) {
+            editableFields =  Object.keys(e).filter(d => 0 > [...this.doNotInclude,'style','opacity','radius','strokewidth'].indexOf(d));
+        }else if(this.phase == 2) { // phase 2
+            if(e.script === undefined) { // template
+                editableFields =  ['args'];
+            }else{ // script
+                editableFields =  ['args','source'];                
+            }    
+        }    
+
+        const fields = f.selectAll(".fields")
+            .data(editableFields, d => d)
+            .join(enter => 
+                enter.append("div")
+                    .classed('fields', true)
+                    .classed('node-type-' + e.type, true)
+                    .attr('id', d => 'formf-' + d)   
+                    .each(function(dd) {
+                        const el = d3.select(this);
+                        el.append("span")
+                            .classed('form-fields-names', true)
+                            .text(dd => dd == 'args' ? "args (one per line)" : dd)         
+                        switch(dd) {    
+                            case 'type':                            
+                                el.call(ddd => that.makeMenu(ddd,that.nodeTypes,'type', e[dd], '', n => { console.log('CALLBACK',n); 
+                                    if(e.type != n) {
+                                     //   e.type = n;
+                                     //   that.drawGraph(); 
+                                     //   that.editNode(d,e);
+                                      //  return;
+                                    }     
+                                } 
+                                ));      
+                           //     return this.editNode(d,e)  
+                                break;
+                            case 'imageName':                            
+                                el.call(ddd => that.makeMenu(ddd,that.images,'type', e[dd],'imageName'));        
+                                break;
+
+                            case  'args':    // phase2
+                                if(that.phase == 2) {
+                                    const args    = e.script ? e.script.args : e.container.args;
+                                    const maxl = d3.max(args, d => d.length);
+                                    const text = args.join("\n");
+                                    el.append("textarea")
+                                        .attr('rows', args.length || 1 )
+                                        .attr('cols',Math.max(maxl,40))
+                                        .property("value", text)                                                                
+                                        .attr("name", dd => dd)
+                                    break;
+                                }
+
+                            default:    
+                            const val = that.phase == 2 ? (e.script ? e.script[dd] : e.container[dd]) : e[dd]
+                            el.append("input")
+                                .attr("value", val)
+                                .attr("name", dd => dd)
+                                .attr('size', Math.max(val.length,30))
+                        }        
+                    })
+                )
+
+         f.select("#update").on("click", d => {
+            d3.select("#form").classed("hidden", true);
+            editableFields.forEach(d => {
+                console.log(d + ' = ')
+                const fv = f.select("[name=" + d + "]").property("value");
+                const fvv = fv.match(/\n/) ? fv.split("\n") : fv;
+                if(that.phase == 2) {
+                    if(e.script) {
+                        e.script[d] = fvv;                      
+                    }else{
+                        e.container[d] = fvv;
+                    }
+                }else{
+                    e[d] = fv;
+                }
+            })
+
+            this.drawGraph();         
+            this.tickTransitionDelay = 250;
+            this.simulation.restart();    
+            this.tickTransitionDelay = 0;
+      //      f.selectAll(".fields").remove().html("");
+         })                          
+    }
+
+
+
+    mouseMoveEventGlobal = (e) => {
+	
+       // console.log();
+        if(!e.ctrlKey) return;
+        // if(!this.mouseDownNode) return;
+        if(this.mouseDownNode) {
+            console.log('MouseMove-NODE');
+            this.dragLine.classed('hidden', false)
+            .attr("marker-end", `url(${new URL(`#arrow-steelblue`, location)})`)
+            .attr('d', this.linkArcUni({source:this.mouseDownNode, 
+                target: {x: e.x - this.margin.left , y: e.offsetY -this.margin.top ,radius:1}} ,true))
+        }else if(this.mouseDownLink) {
+            console.log('MouseMove-LINK');
+            console.log('moiseLinkMove', this.mouseDownLink.source.x);
+            const source = { 
+                x: (this.mouseDownLink.target.x + this.mouseDownLink.source.x)/2,  
+                y: (this.mouseDownLink.target.y + this.mouseDownLink.source.y)/2
+            };  
+            this.dragLine.classed('hidden', false)
+            .attr("marker-end", `url(${new URL(`#arrow-steelblue`, location)})`)
+            .attr('d', this.linkArcUni({
+                source:source, 
+                target: {x: e.x - this.margin.left , y: e.offsetY -this.margin.top ,radius:1}} ,true))            
+        }    
+    }
+
+    mouseUpEventGlobal = (e) => {	
+        this.resetMouseVars();
+    }
+
+
+
+    mouseMoveNodeEvent = (d,e) => {
+          //  console.log('mouseMoveNode');
+
+            if(this.mouseDownNode) {
+                this.dragLine.attr('d', this.linkArcUni({source: this.mouseDownNode, target: e}))        
+                
+            }else if(this.mouseDownLink) {
+                const source = { 
+                    x: (this.mouseDownLink.target.x + this.mouseDownLink.source.x)/2,  
+                    y: (this.mouseDownLink.target.y + this.mouseDownLink.source.y)/2
+                }; 
+                this.dragLine.attr('d', this.linkArcUni({source: source, target: e}))  
+
+            }else{
+                return;
+            }        
+                     
+        d.stopPropagation();
+    }
+
+
+    mouseUpNodeEvent = (d,e) => {
+
+	    console.log('Node mouseUP ', this.mouseDownNode, e);
+
+        console.log('moousedownLink', this.mouseDownLink)
+							     	    
+        this.mouseUpNode = e;
+        if(this.mouseUpNode === this.mouseDownNode) { 
+            this.resetMouseVars(); 
+            return; 
+        }
+
+//create new link
+        
+        let newLink;
+        if(this.mouseDownLink) {
+                this.mouseDownLink.edge.targets.push(  { 
+                        "template": this.mouseUpNode.name,
+                        "config": {
+                                      "name": "message",
+                                      "path": "output"
+                        } } );
+
+        }else 
+        
+        if(this.mouseDownNode) {
+
+            const newEdge = { 
+                type : "artifact",                 
+                repository: {
+                    type: 'gcs', 
+                    params: this.repType.gcs 
+                },
+                sources : [{
+                    "template": this.mouseDownNode.name,
+					"config": {
+						"name": "message",
+						"path": "output"
+					}
+                }],    
+            
+                targets : [{
+                    "template": this.mouseUpNode.name,
+					"config": {
+						"name": "message",
+						"path": "output"
+				    }
+                }],
+                width: 5, 
+                color: "blue", 
+                opacity : 1, 
+                linecap : ""                                          
+            };
+
+            this.dataSrc.edges.push(newEdge);
+        }
+        
+        
+        console.log('new link added', newLink);
+            // this.linkColors.push( this.edgeTypes.find(d => d.type == 'artifact').color );
+        /* this.simulation.force("link", d3.forceLink(this.links).id(d => d.id)).restart()
+       // }
+       console.log(this.links);
+        this.drawGraph()
+        */
+        this.resetMouseVars(); 
+
+        this.initData(true);
+        console.log(this.dataSrc);
+        this.dataToNodes();
+        this.drawGraph(true)
+    } 
+
+    mouseDownNodeEvent = (d,e) => {
+
+        this.resetMouseVars();
+		this.mouseDownNode = e;
+        console.log('mousedownNODE');   
+      //this.dragLine
+        //    .attr("marker-end", `url(${new URL(`#arrow-steelblue`, location)})`)
+			//.classed('hidden', false)
+            //.attr('d', 'M' + this.mouseDownNode.x + ',' + this.mouseDownNode.y + 'L' + this.mouseDownNode.x + ',' + this.mouseDownNode.y);	  
+    }
+
+    mouseDownLinkEvent = (d,e) => {
+
+     //   this.resetMouseVars();
+        console.log('mousedownLink');
+        this.mouseDownLink = e;
+     //   console.log(d,e);
+
+     //   this.dragLine
+     //       .attr("marker-end", `url(${new URL(`#arrow-steelblue`, location)})`)
+          //  .classed('hidden', false)
+          //  .attr('d', 'M' + d.x + ',' + d.y + 'L' + d.x + ',' + d.y);	  
+    }
+
+    resetMouseVars = () => {
+        console.log('RESET');
+        this.mouseDownNode = null;
+        this.mouseDownLink = null;
+        this.mouseUpNode = null;
+        this.dragLine
+            .classed('hidden', true)
+            .style('marker-end', '');
+        this.linkG.selectAll(".link,.node").classed('selected', false);
+
+        d3.selectAll(".forms").classed('hidden', true)
+        //d3.selectAll(".edges-only-fields").remove();
+
+    }
+
+
+}    
+
+
+const g = new Graph("#container", 800,600);   
+
+// g.loadData("getdataFile?data=demo1Graph");
+
+</script>
+</body>
+</html>
