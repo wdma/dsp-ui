@@ -105,10 +105,10 @@ app.get(`/getdataFile`, function (req, res) {
   }
 });
 
-app.get(`/getJAMLdataFile`, function (req, res) {
+app.get('/getYAMLdataFile', function (req, res) {
   res.statusCode = 200;
   try {
-    const file = "./compiledGraphs/" + req.query.data + ".yaml";
+    const file = "compiledGraphs/" + req.query.data + ".yaml";
     console.log("reading file " + file +  " ...")
     if (fs.existsSync(path.join(dir, file))) {
       res.sendFile( path.join(dir, file) );
@@ -141,9 +141,10 @@ app.post('/updateData', function (req, res) {
   
 app.post('/updateDataYAML', function (req, res) {
   res.statusCode = 200;
-  console.log(req.body);
   const data = JSON.stringify(req.body, null, "\t");
   let graphname = req.body.metadata.name;
+  console.log("updating file " + graphname +  " ...")
+
   let fn = path.join(dir, 'compiledGraphs/' + graphname + '.bak.jaml')
   fs.writeFile(fn, data , function (err) {
     if (err) throw err;

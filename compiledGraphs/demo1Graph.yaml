@@ -1,0 +1,540 @@
+   {
+      "apiVersion": "argoproj.io/v1alpha1",
+      "kind": "Workflow",
+      "metadata": {
+         "annotations": {
+            "workflows.argoproj.io/description": "testing a Sonar Catalog",
+            "workflows.argoproj.io/version": ">= 3.1.0"
+         },
+         "labels": {
+            "app.kubernetes.io/component": "workflow",
+            "app.kubernetes.io/created-by": "Jargon",
+            "app.kubernetes.io/instance": "dsp-testinglabels",
+            "app.kubernetes.io/managed-by": "diana_ma",
+            "app.kubernetes.io/name": "dsp",
+            "app.kubernetes.io/part-of": "A Datascience Platform for Scientists",
+            "app.kubernetes.io/version": "0.1.0",
+            "test": "label",
+            "workflows.argoproj.io/archive-strategy": "false"
+         },
+         "name": "demo1",
+         "namespace": "sandbox"
+      },
+      "spec": {
+         "arguments": {
+            "parameters": [
+               {
+                  "name": "url1",
+                  "value": "https://data.ngdc.noaa.gov/platforms/ocean/mgg/wcsd-archive.json"
+               },
+               {
+                  "name": "url2",
+                  "value": "https://data.ngdc.noaa.gov/platforms/ocean/mgg/mb-archive.json"
+               },
+               {
+                  "name": "ipaddr",
+                  "value": "https://www.hippocampusanalytics.com/showme"
+               }
+            ]
+         },
+         "entrypoint": "entrypoint",
+         "securityContext": {
+            "fsGroup": 2000,
+            "fsGroupChangePolicy": "OnRootMismatch",
+            "runAsGroup": 3000,
+            "runAsNonRoot": true,
+            "runAsUser": 1000
+         },
+         "serviceAccountName": "dma",
+         "templates": [
+            {
+               "container": {
+                  "args": [
+                     "/tmp/ingress1_out",
+                     "{{inputs.parameters.url1}}",
+                     "wget -O - -o /dev/null 'inputs.parameters[0].value' >> 'outputs.artifacts[0].value' && exit"
+                  ],
+                  "command": [
+                     "bin/bash",
+                     "-c"
+                  ],
+                  "image": "weilidma/curl:0.4",
+                  "imagePullPolicy": "IfNotPresent",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "inputs": {
+                  "parameters": [
+                     {
+                        "name": "url1"
+                     }
+                  ]
+               },
+               "name": "ingress1",
+               "outputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/ingress1_out"
+                     }
+                  ]
+               },
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "container": {
+                  "args": [
+                     "/tmp/ingress2_out",
+                     "{{inputs.parameters.url2}}",
+                     "wget -O - -o /dev/null 'inputs.parameters[0].value >> 'outputs.artifacts[0].value' && exit"
+                  ],
+                  "command": [
+                     "bin/bash",
+                     "-c"
+                  ],
+                  "image": "weilidma/curl:0.4",
+                  "imagePullPolicy": "IfNotPresent",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "inputs": {
+                  "parameters": [
+                     {
+                        "name": "url2"
+                     }
+                  ]
+               },
+               "name": "ingress2",
+               "outputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/ingress2_out"
+                     }
+                  ]
+               },
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "container": {
+                  "args": [
+                     "/tmp/input",
+                     "/tmp/process1_out",
+                     "jq '[.data[].Platform |= test(\"Healy\") | .[][] | select(.Platform == true) | {survey: .Survey, url: .\"Data Access\"}]' 'inputs.artifacts[0].value >> 'outputs.artifacts[0].value' && exit"
+                  ],
+                  "command": [
+                     "bin/bash",
+                     "-c"
+                  ],
+                  "image": "weilidma/curl:0.4",
+                  "imagePullPolicy": "IfNotPresent",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "inputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/input"
+                     }
+                  ]
+               },
+               "name": "process1",
+               "outputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/process1_out"
+                     }
+                  ]
+               },
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "container": {
+                  "args": [
+                     "/tmp/input",
+                     "/tmp/process2_out",
+                     "jq '[.data[].Platform |= test(\"Healy\") | .[][] | select(.Platform == true) | {survey: .Survey, url: .\"Data Access\"}]' 'inputs.artifacts[0].value' >> 'outputs.artifacts[0].value' && exit"
+                  ],
+                  "command": [
+                     "bin/bash",
+                     "-c"
+                  ],
+                  "image": "weilidma/curl:0.4",
+                  "imagePullPolicy": "IfNotPresent",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "inputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/input"
+                     }
+                  ]
+               },
+               "name": "process2",
+               "outputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/process2_out"
+                     }
+                  ]
+               },
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "container": {
+                  "args": [
+                     "/tmp/input1",
+                     "/tmp/input2",
+                     "/tmp/join_out",
+                     "jq -n --slurpfile f1 'inputs.artifacts[0].value' --slurpfile f2 'inputs.artifacts[1].value' -f .jq/join.jq --arg field \"survey\" >> 'outputs.artifacts[0].value' && exit"
+                  ],
+                  "command": [
+                     "bin/bash",
+                     "-c"
+                  ],
+                  "image": "weilidma/curl:0.4",
+                  "imagePullPolicy": "IfNotPresent",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "inputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/input1"
+                     },
+                     {
+                        "name": "data2",
+                        "path": "/tmp/input2"
+                     }
+                  ]
+               },
+               "name": "join",
+               "outputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/join_out"
+                     }
+                  ]
+               },
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "inputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/input"
+                     }
+                  ]
+               },
+               "name": "print",
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "script": {
+                  "args": [
+                     "/tmp/input"
+                  ],
+                  "command": [
+                     "python"
+                  ],
+                  "image": "python:alpine3.6",
+                  "imagePullPolicy": "IfNotPresent",
+                  "source": "with open(\"//tmp/input\", \"r\") as f:\n    print(f.read())\n\n",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "container": {
+                  "args": [
+                     "/tmp/input",
+                     "{{inputs.parameters.ipaddr}}",
+                     "curl --insecure -XPUT -H 'Accept: application/json' -H 'Content-Type: application/json' --data @'inputs.artifacts[1].value' 'inputs.artifacts[0].value' && exit"
+                  ],
+                  "command": [
+                     "bin/bash",
+                     "-c"
+                  ],
+                  "image": "weilidma/curl:0.4",
+                  "imagePullPolicy": "IfNotPresent",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "inputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/input"
+                     }
+                  ],
+                  "parameters": [
+                     {
+                        "name": "ipaddr"
+                     }
+                  ]
+               },
+               "name": "egress",
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "dag": {
+                  "tasks": [
+                     {
+                        "arguments": {
+                           "parameters": [
+                              {
+                                 "name": "url1",
+                                 "value": "{{workflow.parameters.url1}}"
+                              }
+                           ]
+                        },
+                        "name": "ingress1",
+                        "template": "ingress1"
+                     },
+                     {
+                        "arguments": {
+                           "parameters": [
+                              {
+                                 "name": "url2",
+                                 "value": "{{workflow.parameters.url2}}"
+                              }
+                           ]
+                        },
+                        "name": "ingress2",
+                        "template": "ingress2"
+                     },
+                     {
+                        "arguments": {
+                           "artifacts": [
+                              {
+                                 "from": "{{tasks.ingress1.outputs.artifacts.data}}",
+                                 "name": "data"
+                              }
+                           ]
+                        },
+                        "dependencies": [
+                           "ingress1"
+                        ],
+                        "name": "process1",
+                        "template": "process1"
+                     },
+                     {
+                        "arguments": {
+                           "artifacts": [
+                              {
+                                 "from": "{{tasks.ingress2.outputs.artifacts.data}}",
+                                 "name": "data"
+                              }
+                           ]
+                        },
+                        "dependencies": [
+                           "ingress2"
+                        ],
+                        "name": "process2",
+                        "template": "process2"
+                     },
+                     {
+                        "arguments": {
+                           "artifacts": [
+                              {
+                                 "from": "{{tasks.process1.outputs.artifacts.data}}",
+                                 "name": "data"
+                              },
+                              {
+                                 "from": "{{tasks.process2.outputs.artifacts.data}}",
+                                 "name": "data2"
+                              }
+                           ]
+                        },
+                        "dependencies": [
+                           "process1",
+                           "process2"
+                        ],
+                        "name": "join",
+                        "template": "join"
+                     },
+                     {
+                        "arguments": {
+                           "artifacts": [
+                              {
+                                 "from": "{{tasks.join.outputs.artifacts.data}}",
+                                 "name": "data"
+                              }
+                           ]
+                        },
+                        "dependencies": [
+                           "join"
+                        ],
+                        "name": "print",
+                        "template": "print"
+                     },
+                     {
+                        "arguments": {
+                           "artifacts": [
+                              {
+                                 "from": "{{tasks.join.outputs.artifacts.data}}",
+                                 "name": "data"
+                              }
+                           ],
+                           "parameters": [
+                              {
+                                 "name": "ipaddr",
+                                 "value": "{{workflow.parameters.ipaddr}}"
+                              }
+                           ]
+                        },
+                        "dependencies": [
+                           "join"
+                        ],
+                        "name": "egress",
+                        "template": "egress"
+                     }
+                  ]
+               },
+               "name": "entrypoint"
+            }
+         ],
+         "ttlStrategy": {
+            "secondsAfterSuccess": 5
+         }
+      }
+   }

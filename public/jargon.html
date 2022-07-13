@@ -391,8 +391,8 @@ class Graph {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
             }).then( (d) => {             
-                d3.select("#dataUpdateResult").html(d.data).style("opacity",1);
-                d3.select("#dataUpdateResult").transition().duration(2000).style("opacity",0).on('end', () => d3.select("#dataUpdateResult").html(''));
+                d3.select("#messages").html(d.data).style("opacity",1);
+                d3.select("#messages").transition().duration(2000).style("opacity",0).on('end', () => d3.select("#messages").html(''));
             })                     
         }) 
 
@@ -641,18 +641,17 @@ class Graph {
             nodes: data.spec.templates.filter(d => d.container) ,
             edges: []
         }    
-
         data.spec.templates.forEach(d => this.nodesByName[d.name] = d);
-
         return this.dataSrc;
     }  
     
      
     GraphToYAML() { // update YAML data structure before saving into file
 
+        const fieldsToRemove = ['vx','vy','x','y','radius','index'];
         this.dataSrc.nodes.forEach(d => {
             const dd = this.dataYAML.spec.templates.find(n => n.name == d.name);
-          //  console.log(dd,d);
+            fieldsToRemove.forEach(d => delete dd[d]);
             if(dd.script)  { 
                 dd.script.args = d.script.args;
                 if(d.script.source) dd.script.source = d.script.source;
