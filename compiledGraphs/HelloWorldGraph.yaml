@@ -1,0 +1,162 @@
+   {
+      "apiVersion": "argoproj.io/v1alpha1",
+      "kind": "Workflow",
+      "metadata": {
+         "annotations": {
+            "workflows.argoproj.io/description": "testing a linter",
+            "workflows.argoproj.io/version": ">= 3.1.0"
+         },
+         "labels": {
+            "app.kubernetes.io/component": "workflow",
+            "app.kubernetes.io/created-by": "Jargon",
+            "app.kubernetes.io/instance": "dsp-testinglabels",
+            "app.kubernetes.io/managed-by": "diana_ma",
+            "app.kubernetes.io/name": "dsp",
+            "app.kubernetes.io/part-of": "A Datascience Platform for Scientists",
+            "app.kubernetes.io/version": "0.1.0",
+            "test": "label",
+            "workflows.argoproj.io/archive-strategy": "false"
+         },
+         "name": "hello-world",
+         "namespace": "sandbox"
+      },
+      "spec": {
+         "arguments": {
+            "parameters": [
+               {
+                  "name": "msg",
+                  "value": "Hello there"
+               }
+            ]
+         },
+         "entrypoint": "entrypoint",
+         "securityContext": {
+            "fsGroup": 2000,
+            "fsGroupChangePolicy": "OnRootMismatch",
+            "runAsGroup": 3000,
+            "runAsNonRoot": true,
+            "runAsUser": 1000
+         },
+         "serviceAccountName": "dma",
+         "templates": [
+            {
+               "container": {
+                  "args": [
+                     "/tmp/output",
+                     "cowsay Hello Test >> OUTPUT"
+                  ],
+                  "command": [
+                     "sh",
+                     "-c"
+                  ],
+                  "image": "docker/whalesay:latest",
+                  "imagePullPolicy": "IfNotPresent",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "name": "whalesay",
+               "outputs": {
+                  "artifacts": [
+                     {
+                        "name": "message",
+                        "path": "/tmp/output"
+                     }
+                  ]
+               },
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "inputs": {
+                  "artifacts": [
+                     {
+                        "name": "data",
+                        "path": "/tmp/input"
+                     }
+                  ]
+               },
+               "name": "print",
+               "retryStrategy": {
+                  "limit": "10"
+               },
+               "script": {
+                  "args": [
+                     "/tmp/input"
+                  ],
+                  "command": [
+                     "python"
+                  ],
+                  "image": "python:alpine3.6",
+                  "imagePullPolicy": "IfNotPresent",
+                  "source": "with open(\"//tmp/input\", \"r\") as f:\n    print(f.read())\n",
+                  "volumeMounts": [
+                     {
+                        "mountPath": "/tmp",
+                        "name": "emptydir"
+                     }
+                  ]
+               },
+               "securityContext": {
+                  "fsGroup": 2000,
+                  "fsGroupChangePolicy": "OnRootMismatch",
+                  "runAsGroup": 3000,
+                  "runAsNonRoot": true,
+                  "runAsUser": 1000
+               },
+               "volumes": [
+                  {
+                     "emptyDir": {},
+                     "name": "emptydir"
+                  }
+               ]
+            },
+            {
+               "dag": {
+                  "tasks": [
+                     {
+                        "name": "whalesay",
+                        "template": "whalesay"
+                     },
+                     {
+                        "arguments": {
+                           "artifacts": [
+                              {
+                                 "from": "{{tasks.whalesay.outputs.artifacts.message}}",
+                                 "name": "data"
+                              }
+                           ]
+                        },
+                        "dependencies": [
+                           "whalesay"
+                        ],
+                        "name": "print",
+                        "template": "print"
+                     }
+                  ]
+               },
+               "name": "entrypoint"
+            }
+         ],
+         "ttlStrategy": {
+            "secondsAfterSuccess": 5
+         }
+      }
+   }
