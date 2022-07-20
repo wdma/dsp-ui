@@ -1,68 +1,74 @@
-{ 
-  "metadata": {
-    "name": "hello-world",
-    "description": "testing a linter",
-    "labels": {"test": "label"},
-    "arguments": {
-      "parameters": [
-        {
-          "name": "msg",
-          "value": "Hello there"
-        }
-      ]
-    }
-  },
-  "edges": [
-    {
-      "type": "artifact",
-      "width": 10,
-      "opacity": 1, 
-      "repository": {
-        "type": "emptyDir",
-        "params": {
-          "name": "testvol",
-          "path": "/tmp",
-        }
-      },
-      "sources": [
-       {
-         "template": "whalesay",
-         "config": {
-           "name": "message",
-           "path": "output"
-         }
-       }
-      ],
-      "targets": [
-       { 
-         "template":"print",
-         "config": {
-           "name": "data",
-           "path": "input",
-           "from": "tasks.whalesay.outputs.artifacts.message"
-         }
-       }
-      ]
-    }
-  ],
-  "nodes": [
-    {       
-      "id": 1,
-      "strokewidth": 1,
-      "type": "template",
-      "name": "whalesay",
-      "imageName": "whalesay",
-      "args": ["cowsay Hello Test >> OUTPUT"],
-      "ports": [],
-    },
-    { 
-      "id": 2,
-      "strokewidth": 1,
-      "type": "script",
-      "name": "print",
-      "imageName": "python",
-      "source": "with open(\"//tmp/input\", \"r\") as f:\n    print(f.read())",
-      "ports": [],
-    }
-  ]
+{
+	"metadata": {
+		"name": "HelloWorldGraph",
+		"description": "testing a linter",
+		"labels": {
+			"test": "label"
+		},
+		"arguments": {
+			"parameters": [
+				{
+					"name": "msg",
+					"value": "Hello there"
+				}
+			]
+		}
+	},
+	"edges": [
+		{
+			"type": "artifact",
+			"width": 10,
+			"opacity": 1,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "testvol",
+					"path": "/tmp"
+				}
+			},
+			"sources": [
+				{
+					"template": "whalesay",
+					"config": {
+						"name": "message",
+						"path": "output"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "print",
+					"config": {
+						"name": "data",
+						"path": "input",
+						"from": "tasks.whalesay.outputs.artifacts.message"
+					}
+				}
+			]
+		}
+	],
+	"nodes": [
+		{
+			"id": 1,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "whalesay",
+			"imageName": "whalesay",
+			"args": [
+				"cowsay Hello Test >> OUTPUT"
+			],
+			"ports": [],
+			"radius": 15
+		},
+		{
+			"id": 2,
+			"strokewidth": 1,
+			"type": "script",
+			"name": "print",
+			"imageName": "python",
+			"source": "with open(\"//tmp/input\", \"r\") as f:\n    print(f.read())",
+			"ports": [],
+			"radius": 25
+		}
+	]
 }

@@ -391,8 +391,8 @@ class Graph {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data)
             }).then( (d) => {             
-                d3.select("#messages").html(d.data).style("opacity",1);
-                d3.select("#messages").transition().duration(2000).style("opacity",0).on('end', () => d3.select("#messages").html(''));
+                d3.selectAll("#messages").html(d.data).style("opacity",1);
+                d3.selectAll("#messages").transition().duration(2000).style("opacity",0).on('end', () => d3.selectAll("#messages").html(''));
             })                     
         }) 
 
@@ -414,8 +414,8 @@ class Graph {
                     console.log('requesting ' + name);
                  
                     d3.timeout( () => { 
-                        d3.json(this.rootDir + '/getJAMLdataFile?data=' + name).then(d => { 
-                            console.log(d);
+                        d3.json(this.rootDir + '/getYAMLdataFile?data=' + name).then(d => { 
+                         //   console.log(d);
                             if(d.error || d.stderr ) {
                                 const text = "Error: " + ( d.error ? " code: " + d.error.code + ", text: " + d.error.cmd : "" ) + d.stderr;  
                              d3.selectAll("#messages").html(text).style("opacity",1);
@@ -424,7 +424,7 @@ class Graph {
                             }else{
                                 this.dataYAML = d;
                                 this.initData(true);
-                                d3.select("#updateData").attr("value","Save Data [" + ( this.dataYAML.metadata.name ) + ".yaml]") 
+                                d3.select("#updateDataYAML").attr("value","Save Data [" + ( this.dataYAML.metadata.name ) + ".yaml]") 
                                 this.YAMLtoGraph(); 
                                 console.log(this.dataYAML);
                                 this.drawGraph();
@@ -553,7 +553,6 @@ class Graph {
         this.drawGraph()  
         d3.selectAll(".node").style('opacity', 1).style('fill', '').style('stroke-width', '');
     }   
-
 
     initData = (reset = false) => {
         

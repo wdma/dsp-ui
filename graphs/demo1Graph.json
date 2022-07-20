@@ -1,315 +1,336 @@
-{  
-  "metadata": {
-    "name": "demo1",
-    "description": "testing a Sonar Catalog",
-    "labels": {"test": "label"},
-    "arguments": {
-      "parameters": [
-        {
-          "name": "url1",
-          "value": "https://data.ngdc.noaa.gov/platforms/ocean/mgg/wcsd-archive.json"
-        },
-        {
-          "name": "url2",
-          "value": "https://data.ngdc.noaa.gov/platforms/ocean/mgg/mb-archive.json"
-        },
-        {
-          "name": "ipaddr",
-          "value": "https://www.hippocampusanalytics.com/showme"
-        }
-      ]
-    }
-  },
-  "edges": [
-      {
-      "type": "parameter",
-      "width": 10,
-      "opacity": 1, 
-      "sources": [
-       {
-         "template": "workflow",
-         "config": {
-           "name": "url1",
-           "value": "url1"
-         }
-       }
-      ],
-      "targets": [
-       { 
-         "template": "ingress1",
-         "config": {
-           "name": "url1",
-           "value": "workflow.parameters.url1"
-         }
-       }
-      ]
-    },
-    {
-      "type": "parameter",
-      "width": 10,
-      "opacity": 1, 
-      "sources": [
-       {
-         "template": "workflow",
-         "config": {
-           "name": "url2",
-           "value": "url2"
-         }
-       }
-      ],
-      "targets": [
-       { 
-         "template": "ingress2",
-         "config": {
-           "name": "url2",
-           "value": "workflow.parameters.url2"
-         }
-       }
-      ]
-    },
-    {
-      "type": "parameter",
-      "width": 10,
-      "opacity": 1, 
-      "sources": [
-       {
-         "template": "workflow",
-         "config": {
-           "name": "ipaddr",
-           "value": "ipaddr"
-         }
-       }
-      ],
-      "targets": [
-       { 
-         "template": "egress",
-         "config": {
-           "name": "ipaddr",
-           "value": "workflow.parameters.ipaddr"
-         }
-       }
-      ]
-    },
-    {
-      "type": "artifact",
-      "width": 10,
-      "opacity": 1, 
-      "repository": {
-        "type": "emptyDir",
-        "params": {
-          "name": "ingress1",
-          "path": "/tmp"
-        }
-      },
-      "sources": [
-       {
-         "template": "ingress1",
-         "config": {
-           "name": "data",
-           "path": "ingress1_out"
-         }
-       }
-      ],
-      "targets": [
-       { 
-         "template": "process1",
-         "config": {
-           "name": "data",
-           "from": "tasks.ingress1.outputs.artifacts.data",
-           "path": "input"
-         }
-       }
-      ]
-    },
-    {
-      "type": "artifact",
-      "width": 10,
-      "opacity": 1, 
-      "repository": {
-        "type": "emptyDir",
-        "params": {
-          "name": "ingress2",
-          "path": "/tmp"
-        }
-      },
-      "sources": [
-       {
-         "template": "ingress2",
-         "config": {
-           "name": "data",
-           "path": "ingress2_out"
-         }
-       }
-      ],
-      "targets": [
-       { 
-          "template": "process2",
-          "config": {
-            "name": "data",
-            "from": "tasks.ingress2.outputs.artifacts.data",
-            "path": "input"
-          }
-        }  
-      ]
-    },
-    {
-      "type": "artifact",
-      "width": 10,
-      "opacity": 1, 
-      "repository": {
-        "type": "emptyDir",
-        "params": {
-          "name": "process1",
-          "path": "/tmp"
-        }
-      },
-      "sources": [
-       {
-         "template": "process1",
-         "config": {
-           "name": "data",
-           "path": "process1_out"
-         }
-       }
-      ],
-      "targets": [
-       { 
-          "template":"join",
-          "config": {
-            "name": "data",
-            "from": "tasks.process1.outputs.artifacts.data",
-            "path": "input1"
-          }
-        }
-      ]
-    },
-    {
-      "type": "artifact",
-      "width": 10,
-      "opacity": 1, 
-      "repository": {
-        "type": "emptyDir",
-        "params": {
-          "name": "process2",
-          "path": "/tmp"
-        }
-      },
-      "sources": [
-       {
-         "template": "process2",
-         "config": {
-           "name": "data",
-           "path": "process2_out"
-         }
-       }
-      ],
-      "targets": [
-       { 
-         "template": "join",
-         "config": {
-           "name": "data2",
-           "from": "tasks.process2.outputs.artifacts.data",
-           "path": "input2"
-         }
-       }
-      ]
-    },
-    {
-      "type": "artifact",
-      "width": 10,
-      "opacity": 1, 
-      "repository": {
-        "type": "emptyDir",
-        "params": {
-          "name": "join",
-          "path": "/tmp"
-        }
-      },
-      "sources": [
-       {
-         "template": "join",
-         "config": {
-           "name": "data",
-           "path": "join_out"
-         }
-       }
-      ],
-      "targets": [
-      { 
-         "template":"print",
-         "config": {
-           "name": "data",
-           "from": "tasks.join.outputs.artifacts.data",
-           "path": "input"
-         }
-       },
-       { 
-         "template":"egress",
-         "config": {
-           "name": "data",
-           "from": "tasks.join.outputs.artifacts.data",
-           "path": "input"
-         }
-       }
-      ]
-    }
-  ],
-  "nodes": [
-    { 
-      "id": 1,
-      "strokewidth": 1,
-      "type": "template",
-      "name": "ingress1",
-      "imageName": "curl",
-      "args": ["wget -O - -o /dev/null \u0027inputs.parameters[0].value\u0027 >> \u0027outputs.artifacts[0].value\u0027 && exit"]
-    },
-    { 
-      "id": 2,
-      "strokewidth": 1,
-      "type": "template",
-      "name": "ingress2",
-      "imageName": "curl",
-      "args": ["wget -O - -o /dev/null \u0027inputs.parameters[0].value >> \u0027outputs.artifacts[0].value\u0027 && exit"]
-    },
-    { 
-      "id": 3,
-      "strokewidth": 1,
-      "type": "template",
-      "name": "process1",
-      "imageName": "curl",
-      "args": ["jq \u0027[.data[].Platform |= test(\u0022Healy\u0022) | .[][] | select(.Platform == true) | {survey: .Survey, url: .\u0022Data Access\u0022}]\u0027 \u0027inputs.artifacts[0].value >> \u0027outputs.artifacts[0].value\u0027 && exit"]
-    },
-    { 
-      "id": 4,
-      "strokewidth": 1,
-      "type": "template",
-      "name": "process2",
-      "imageName": "curl",
-      "args": ["jq \u0027[.data[].Platform |= test(\u0022Healy\u0022) | .[][] | select(.Platform == true) | {survey: .Survey, url: .\u0022Data Access\u0022}]\u0027 \u0027inputs.artifacts[0].value\u0027 >> \u0027outputs.artifacts[0].value\u0027 && exit"]
-    },
-    { 
-      "id": 5,
-      "strokewidth": 1,
-      "type": "template",
-      "name": "join",
-      "imageName": "curl",
-      "args": ["jq -n --slurpfile f1 \u0027inputs.artifacts[0].value\u0027 --slurpfile f2 \u0027inputs.artifacts[1].value\u0027 -f .jq/join.jq --arg field \u0022survey\u0022 >> \u0027outputs.artifacts[0].value\u0027 && exit"]
-    },    
-    {
-      "id": 6,
-      "strokewidth": 1,
-      "type": "script",
-      "name": "print",
-      "imageName": "python",
-      "source": "with open(\"//tmp/input\", \"r\") as f:\n    print(f.read())\n"
-    },  
-    { 
-      "id": 7,
-      "strokewidth": 1,
-      "type": "template",
-      "name": "egress",
-      "imageName": "curl",
-      "args": ["curl --insecure -XPUT -H \u0027Accept: application/json\u0027 -H \u0027Content-Type: application/json\u0027 --data @\u0027inputs.artifacts[1].value\u0027 \u0027inputs.artifacts[0].value\u0027 && exit"]
-    }
-  ]
+{
+	"metadata": {
+		"name": "demo1Graph",
+		"description": "testing a Sonar Catalog",
+		"labels": {
+			"test": "label"
+		},
+		"arguments": {
+			"parameters": [
+				{
+					"name": "url1",
+					"value": "https://data.ngdc.noaa.gov/platforms/ocean/mgg/wcsd-archive.json"
+				},
+				{
+					"name": "url2",
+					"value": "https://data.ngdc.noaa.gov/platforms/ocean/mgg/mb-archive.json"
+				},
+				{
+					"name": "ipaddr",
+					"value": "https://www.hippocampusanalytics.com/showme"
+				}
+			]
+		}
+	},
+	"edges": [
+		{
+			"type": "parameter",
+			"width": 10,
+			"opacity": 1,
+			"sources": [
+				{
+					"template": "workflow",
+					"config": {
+						"name": "url1",
+						"value": "url1"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "ingress1",
+					"config": {
+						"name": "url1",
+						"value": "workflow.parameters.url1"
+					}
+				}
+			]
+		},
+		{
+			"type": "parameter",
+			"width": 10,
+			"opacity": 1,
+			"sources": [
+				{
+					"template": "workflow",
+					"config": {
+						"name": "url2",
+						"value": "url2"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "ingress2",
+					"config": {
+						"name": "url2",
+						"value": "workflow.parameters.url2"
+					}
+				}
+			]
+		},
+		{
+			"type": "parameter",
+			"width": 10,
+			"opacity": 1,
+			"sources": [
+				{
+					"template": "workflow",
+					"config": {
+						"name": "ipaddr",
+						"value": "ipaddr"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "egress",
+					"config": {
+						"name": "ipaddr",
+						"value": "workflow.parameters.ipaddr"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"width": 10,
+			"opacity": 1,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "ingress1",
+					"path": "/tmp"
+				}
+			},
+			"sources": [
+				{
+					"template": "ingress1",
+					"config": {
+						"name": "data",
+						"path": "ingress1_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "process1",
+					"config": {
+						"name": "data",
+						"from": "tasks.ingress1.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"width": 10,
+			"opacity": 1,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "ingress2",
+					"path": "/tmp"
+				}
+			},
+			"sources": [
+				{
+					"template": "ingress2",
+					"config": {
+						"name": "data",
+						"path": "ingress2_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "process2",
+					"config": {
+						"name": "data",
+						"from": "tasks.ingress2.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"width": 10,
+			"opacity": 1,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "process1",
+					"path": "/tmp"
+				}
+			},
+			"sources": [
+				{
+					"template": "process1",
+					"config": {
+						"name": "data",
+						"path": "process1_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "join",
+					"config": {
+						"name": "data",
+						"from": "tasks.process1.outputs.artifacts.data",
+						"path": "input1"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"width": 10,
+			"opacity": 1,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "process2",
+					"path": "/tmp"
+				}
+			},
+			"sources": [
+				{
+					"template": "process2",
+					"config": {
+						"name": "data",
+						"path": "process2_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "join",
+					"config": {
+						"name": "data2",
+						"from": "tasks.process2.outputs.artifacts.data",
+						"path": "input2"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"width": 10,
+			"opacity": 1,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "join",
+					"path": "/tmp"
+				}
+			},
+			"sources": [
+				{
+					"template": "join",
+					"config": {
+						"name": "data",
+						"path": "join_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "print",
+					"config": {
+						"name": "data",
+						"from": "tasks.join.outputs.artifacts.data",
+						"path": "input"
+					}
+				},
+				{
+					"template": "egress",
+					"config": {
+						"name": "data",
+						"from": "tasks.join.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		}
+	],
+	"nodes": [
+		{
+			"id": 1,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "ingress1",
+			"imageName": "curl",
+			"args": [
+				"wget -O - -o /dev/null 'inputs.parameters[0].value' >> 'outputs.artifacts[0].value' && exit"
+			],
+			"radius": 15
+		},
+		{
+			"id": 2,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "ingress2",
+			"imageName": "curl",
+			"args": [
+				"wget -O - -o /dev/null 'inputs.parameters[0].value >> 'outputs.artifacts[0].value' && exit"
+			],
+			"radius": 15
+		},
+		{
+			"id": 3,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "process1",
+			"imageName": "curl",
+			"args": [
+				"jq '[.data[].Platform |= test(\"Healy\") | .[][] | select(.Platform == true) | {survey: .Survey, url: .\"Data Access\"}]' 'inputs.artifacts[0].value >> 'outputs.artifacts[0].value' && exit"
+			],
+			"radius": 15
+		},
+		{
+			"id": 4,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "process2",
+			"imageName": "curl",
+			"args": [
+				"jq '[.data[].Platform |= test(\"Healy\") | .[][] | select(.Platform == true) | {survey: .Survey, url: .\"Data Access\"}]' 'inputs.artifacts[0].value' >> 'outputs.artifacts[0].value' && exit"
+			],
+			"radius": 15
+		},
+		{
+			"id": 5,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "join",
+			"imageName": "curl",
+			"args": [
+				"jq -n --slurpfile f1 'inputs.artifacts[0].value' --slurpfile f2 'inputs.artifacts[1].value' -f .jq/join.jq --arg field \"survey\" >> 'outputs.artifacts[0].value' && exit"
+			],
+			"radius": 15
+		},
+		{
+			"id": 6,
+			"strokewidth": 1,
+			"type": "script",
+			"name": "print",
+			"imageName": "python",
+			"source": "with open(\"//tmp/input\", \"r\") as f:\n    print(f.read())\n",
+			"radius": 25
+		},
+		{
+			"id": 7,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "egress",
+			"imageName": "curl",
+			"args": [
+				"curl --insecure -XPUT -H 'Accept: application/json' -H 'Content-Type: application/json' --data @'inputs.artifacts[1].value' 'inputs.artifacts[0].value' && exit"
+			],
+			"radius": 15
+		}
+	]
 }

@@ -1,0 +1,569 @@
+{
+	"metadata": {
+		"name": "demo2",
+		"description": "testing an OMAO data pipeline",
+		"labels": {
+			"test": "label"
+		},
+		"arguments": {
+			"parameters": [
+				{
+					"name": "url1",
+					"value": "https://www.nodc.noaa.gov/archive/arc0113/0167795/1.1/data/0-data/SH-0_2017-10-31-154706/ES60%20-%20Bridge%20%20Depth%20Sounder/ES-SDDBT-Bridge-Message_20171009-215644.Raw"
+				},
+				{
+					"name": "url2",
+					"value": "https://www.nodc.noaa.gov/archive/arc0113/0167795/1.1/data/0-data/SH-0_2017-10-31-154706/GPS%20-%20Science%20MX420/SciGPS-GPGGA_20171022-000000.Raw"
+				},
+				{
+					"name": "ipaddr",
+					"value": "https://www.hippocampusanalytics.com/showme"
+				}
+			]
+		}
+	},
+	"edges": [
+		{
+			"type": "parameter",
+			"color": "blue",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 1,
+			"target": 1,
+			"sources": [
+				{
+					"template": "workflow",
+					"config": {
+						"name": "url1",
+						"value": "url1"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "ingress1",
+					"config": {
+						"name": "url1",
+						"value": "workflow.parameters.url1"
+					}
+				}
+			]
+		},
+		{
+			"type": "parameter",
+			"color": "blue",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 2,
+			"target": 2,
+			"sources": [
+				{
+					"template": "workflow",
+					"config": {
+						"name": "url2",
+						"value": "url2"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "ingress2",
+					"config": {
+						"name": "url2",
+						"value": "workflow.parameters.url2"
+					}
+				}
+			]
+		},
+		{
+			"type": "parameter",
+			"color": "blue",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 7,
+			"target": 7,
+			"sources": [
+				{
+					"template": "workflow",
+					"config": {
+						"name": "ipaddr",
+						"value": "ipaddr"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "egress",
+					"config": {
+						"name": "ipaddr",
+						"value": "workflow.parameters.ipaddr"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"color": "red",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 1,
+			"target": 3,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "ingress1",
+					"storageClassName": "manual",
+					"path": "/tmp",
+					"labels": {
+						"template": "test"
+					},
+					"accessModes": [
+						"ReadWriteMany"
+					],
+					"capacity": "1Gi"
+				}
+			},
+			"sources": [
+				{
+					"template": "ingress1",
+					"config": {
+						"name": "data",
+						"path": "ingress1_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "process1",
+					"config": {
+						"name": "data",
+						"from": "tasks.ingress1.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"color": "red",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 2,
+			"target": 4,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "ingress2",
+					"storageClassName": "manual",
+					"path": "/tmp",
+					"labels": {
+						"template": "test"
+					},
+					"accessModes": [
+						"ReadWriteMany"
+					],
+					"capacity": "1Gi"
+				}
+			},
+			"sources": [
+				{
+					"template": "ingress2",
+					"config": {
+						"name": "data",
+						"path": "ingress2_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "process2",
+					"config": {
+						"name": "data",
+						"from": "tasks.ingress2.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"color": "red",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 3,
+			"target": 5,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "process1",
+					"storageClassName": "manual",
+					"path": "/tmp",
+					"labels": {
+						"template": "test"
+					},
+					"accessModes": [
+						"ReadWriteMany"
+					],
+					"capacity": "1Gi"
+				}
+			},
+			"sources": [
+				{
+					"template": "process1",
+					"config": {
+						"name": "data",
+						"path": "process1_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "select1",
+					"config": {
+						"name": "data",
+						"from": "tasks.process1.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"color": "red",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 4,
+			"target": 6,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "process2",
+					"storageClassName": "manual",
+					"path": "/tmp",
+					"labels": {
+						"template": "test"
+					},
+					"accessModes": [
+						"ReadWriteMany"
+					],
+					"capacity": "1Gi"
+				}
+			},
+			"sources": [
+				{
+					"template": "process2",
+					"config": {
+						"name": "data",
+						"path": "process2_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "select2",
+					"config": {
+						"name": "data",
+						"from": "tasks.process2.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"color": "red",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 5,
+			"target": 7,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "select1",
+					"storageClassName": "manual",
+					"path": "/tmp",
+					"labels": {
+						"template": "test"
+					},
+					"accessModes": [
+						"ReadWriteMany"
+					],
+					"capacity": "1Gi"
+				}
+			},
+			"sources": [
+				{
+					"template": "select1",
+					"config": {
+						"name": "data",
+						"path": "select1_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "append",
+					"config": {
+						"name": "data",
+						"from": "tasks.select1.outputs.artifacts.data",
+						"path": "input1"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"color": "red",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 6,
+			"target": 7,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "select2",
+					"storageClassName": "manual",
+					"path": "/tmp",
+					"labels": {
+						"template": "test"
+					},
+					"accessModes": [
+						"ReadWriteMany"
+					],
+					"capacity": "1Gi"
+				}
+			},
+			"sources": [
+				{
+					"template": "select2",
+					"config": {
+						"name": "data",
+						"path": "select2_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "append",
+					"config": {
+						"name": "data2",
+						"from": "tasks.select2.outputs.artifacts.data",
+						"path": "input2"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"color": "red",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 7,
+			"target": 8,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "append",
+					"storageClassName": "manual",
+					"path": "/tmp",
+					"labels": {
+						"template": "test"
+					},
+					"accessModes": [
+						"ReadWriteMany"
+					],
+					"capacity": "1Gi"
+				}
+			},
+			"sources": [
+				{
+					"template": "append",
+					"config": {
+						"name": "data",
+						"path": "append_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "print",
+					"config": {
+						"name": "data",
+						"from": "tasks.append.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		},
+		{
+			"type": "artifact",
+			"color": "red",
+			"width": 10,
+			"opacity": 1,
+			"linecap": "round",
+			"source": 7,
+			"target": 9,
+			"repository": {
+				"type": "emptyDir",
+				"params": {
+					"name": "append",
+					"storageClassName": "manual",
+					"path": "/tmp",
+					"labels": {
+						"template": "test"
+					},
+					"accessModes": [
+						"ReadWriteMany"
+					],
+					"capacity": "1Gi"
+				}
+			},
+			"sources": [
+				{
+					"template": "append",
+					"config": {
+						"name": "data",
+						"path": "append_out"
+					}
+				}
+			],
+			"targets": [
+				{
+					"template": "egress",
+					"config": {
+						"name": "data",
+						"from": "tasks.append.outputs.artifacts.data",
+						"path": "input"
+					}
+				}
+			]
+		}
+	],
+	"nodes": [
+		{
+			"id": 1,
+			"style": "red",
+			"opacity": 0.5,
+			"radius": 15,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "ingress1",
+			"imageName": "curl",
+			"args": [
+				"curl {{inputs.parameters.url1}} > /mnt/raw/raw1.txt && exit"
+			]
+		},
+		{
+			"id": 2,
+			"style": "red",
+			"opacity": 0.5,
+			"radius": 15,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "ingress2",
+			"imageName": "curl",
+			"args": [
+				"curl {{inputs.parameters.url2}} > /mnt/raw/raw2.txt && exit"
+			]
+		},
+		{
+			"id": 3,
+			"style": "red",
+			"opacity": 0.5,
+			"radius": 15,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "process1",
+			"imageName": "curl",
+			"args": [
+				"jq -n --rawfile f /mnt/raw/raw1.txt -f .jq/scsdbt.jq > /mnt/parsed/parsed1temp.json && exit"
+			]
+		},
+		{
+			"id": 4,
+			"style": "red",
+			"opacity": 0.5,
+			"radius": 15,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "process2",
+			"imageName": "curl",
+			"args": [
+				"jq -n --rawfile f /mnt/raw/raw2.txt -f .jq/scsgga.jq > /mnt/parsed/parsed2temp.json && exit"
+			]
+		},
+		{
+			"id": 5,
+			"style": "red",
+			"opacity": 0.5,
+			"radius": 15,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "select1",
+			"imageName": "curl",
+			"args": [
+				"jq '.[100:105]' /mnt/parsed/parsed1temp.json > /mnt/parsed/parsed1.json && exit"
+			]
+		},
+		{
+			"id": 6,
+			"style": "red",
+			"opacity": 0.5,
+			"radius": 15,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "select2",
+			"imageName": "curl",
+			"args": [
+				"jq '.[100:105]' /mnt/parsed/parsed2temp.json > /mnt/parsed/parsed2.json && exit"
+			]
+		},
+		{
+			"id": 7,
+			"style": "red",
+			"opacity": 0.5,
+			"radius": 15,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "append",
+			"imageName": "curl",
+			"args": [
+				"jq -n --slurpfile f1 /mnt/parsed1/parsed1.json --slurpfile f2 /mnt/parsed2/parsed2.json -f .jq/append.jq > /mnt/parsed1/output.json && exit"
+			]
+		},
+		{
+			"id": 8,
+			"style": "blue",
+			"opacity": 0.5,
+			"radius": 25,
+			"strokewidth": 1,
+			"type": "script",
+			"name": "print",
+			"imageName": "python",
+			"source": "with open(\"//tmp/input\", \"r\") as f:\n    print(f.read())\n"
+		},
+		{
+			"id": 9,
+			"style": "red",
+			"opacity": 0.5,
+			"radius": 15,
+			"strokewidth": 1,
+			"type": "template",
+			"name": "egress",
+			"imageName": "curl",
+			"args": [
+				"curl --insecure -XPUT -H 'Accept: application/json' -H 'Content-Type: application/json' --data @/mnt/parsed/output.json {{inputs.parameters.ipaddr}} && exit"
+			]
+		}
+	]
+}

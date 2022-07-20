@@ -98,7 +98,7 @@
         "type": "emptyDir",
         "params": {
           "name": "ingress1",
-          "path": "/tmp",
+          "path": "/tmp"
         }
       },
       "sources": [
@@ -129,7 +129,7 @@
         "type": "emptyDir",
         "params": {
           "name": "ingress2",
-          "path": "/tmp",
+          "path": "/tmp"
         }
       },
       "sources": [
@@ -160,7 +160,7 @@
         "type": "emptyDir",
         "params": {
           "name": "process1",
-          "path": "/tmp",
+          "path": "/tmp"
         }
       },
       "sources": [
@@ -191,7 +191,7 @@
         "type": "emptyDir",
         "params": {
           "name": "process2",
-          "path": "/tmp",
+          "path": "/tmp"
         }
       },
       "sources": [
@@ -222,7 +222,7 @@
         "type": "emptyDir",
         "params": {
           "name": "select1",
-          "path": "/tmp",
+          "path": "/tmp"
         }
       },
       "sources": [
@@ -253,7 +253,7 @@
         "type": "emptyDir",
         "params": {
           "name": "select2",
-          "path": "/tmp",
+          "path": "/tmp"
         }
       },
       "sources": [
@@ -284,7 +284,7 @@
         "type": "emptyDir",
         "params": {
           "name": "append",
-          "path": "/tmp",
+          "path": "/tmp"
         }
       },
       "sources": [
@@ -315,7 +315,7 @@
         "type": "emptyDir",
         "params": {
           "name": "append",
-          "path": "/tmp",
+          "path": "/tmp"
         }
       },
       "sources": [

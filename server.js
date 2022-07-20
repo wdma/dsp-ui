@@ -145,7 +145,7 @@ app.post('/updateDataYAML', function (req, res) {
   let graphname = req.body.metadata.name;
   console.log("updating file " + graphname +  " ...")
 
-  let fn = path.join(dir, 'compiledGraphs/' + graphname + '.bak.jaml')
+  let fn = path.join(dir, 'compiledGraphs/' + graphname + '.bak.yaml')
   fs.writeFile(fn, data , function (err) {
     if (err) throw err;
     const resdata = graphname + ' saved... (' + data.length + ' bytes)';
