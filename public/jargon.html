@@ -197,13 +197,13 @@
             <div id="container">
                 <div id="phase1">
                     <div>
-                        <input id="updateData" type="button" value="Save Data"><span id="dataUpdateResult"></span>
-                        <input id="compileData" type="button" value="Compile Data"><span id="dataCompileResult"></span>
+                        <input id="updateData" class="hidden" type="button" value="Save Data"><span id="dataUpdateResult"></span>
+                        <input id="compileData" class="hidden" type="button" value="Compile Data"><span id="dataCompileResult"></span>
                     </div>
                     <div>
-                        <input class="loadButtons" id="get2" type="button" value="Demo1">
+                      <!--  <input class="loadButtons" id="get2" type="button" value="Demo1">
                         <input class="loadButtons" id="get3" type="button" value="Demo2">
-                        <input class="loadButtons" id="get4" type="button" value="Empty">
+                        <input class="loadButtons" id="get4" type="button" value="Empty"> -->
                         <input id="createNew" type="button" value="Create New">
                         <select name="dataSelector"></select>
                         <div id="messages"></div>
@@ -447,12 +447,14 @@ class Graph {
             console.log('Create New');  
             d3.select("#form").classed("hidden", true);
             d3.select("#createNewForm").classed("hidden", false);
-            //this.dataToNodes({ nodes: [], edges: [] });
-            this.initData(true);         
+            this.nodes = [];
+            this.links = [];
+            this.initData();         
         })  
         
         d3.select("#createNewSave").on("click", () => {
             d3.select("#createNewForm").classed("hidden", true);
+            
             const form = d3.select("#createForm"),
                 els = form.selectAll("input,textarea"),
                 data = this.dataSrc;
@@ -477,7 +479,7 @@ class Graph {
             })    
             if(!data.metadata.name) data.metadata.name = 'newname'; 
             d3.select("#updateData").attr("value","Save Data [" + data.metadata.name + ".json]")
-    
+            console.log(data)
         })         
         
 
@@ -514,7 +516,6 @@ class Graph {
                         if(index) {
 
                             d3.json(this.rootDir + '/getdataFile?data=' + opt).then(d => { 
-                                console.log(this.dataSrc.nodes);
                                 this.initData();
                                 console.log(this.dataSrc.nodes);
                                 this.dataToNodes(d);
@@ -548,9 +549,20 @@ class Graph {
         d3.select("#phase2").style("display","none");
   
         this.phase = 1;
-        this.initData(true);            
-        this.dataToNodes();        
-        this.drawGraph()  
+        const file = this.dataSrc.metadata.name;
+        if(file) {
+            d3.json(this.rootDir + '/getdataFile?data=' + file).then(d => { 
+                this.initData();
+                console.log(this.dataSrc.nodes);
+                this.dataToNodes(d);
+                d3.select("#updateData").attr("value","Save Data [" + ( this.dataSrc.metadata?.name || opt) + ".json]") 
+                this.drawGraph() 
+            })       
+        }else{
+            this.initData(true);            
+            this.dataToNodes();        
+            this.drawGraph() 
+        } 
         d3.selectAll(".node").style('opacity', 1).style('fill', '').style('stroke-width', '');
     }   
 
@@ -568,6 +580,8 @@ class Graph {
             d3.select("#form").classed("hidden", true)
             this.drawGraph();
             this.simulation = false;
+            d3.select("#updateData").classed('hidden', false)
+            d3.select("#compileData").classed('hidden', false)
         }  
 
 

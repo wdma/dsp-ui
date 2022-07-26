@@ -17,7 +17,7 @@
             "test": "label",
             "workflows.argoproj.io/archive-strategy": "false"
          },
-         "name": "demo1",
+         "name": "demo1Graph",
          "namespace": "sandbox"
       },
       "spec": {
