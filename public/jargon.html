@@ -198,7 +198,9 @@
                 <div id="phase1">
                     <div>
                         <input id="updateData" class="hidden" type="button" value="Save Data"><span id="dataUpdateResult"></span>
-                        <input id="compileData" class="hidden" type="button" value="Compile Data"><span id="dataCompileResult"></span>
+                        <input id="compileData" class="hidden" type="button" value="Compile Data">
+                        <input id="compileDataReal"  type="button" value="Compile Data Real">
+                        <span id="dataCompileResult"></span>
                     </div>
                     <div>
                       <!--  <input class="loadButtons" id="get2" type="button" value="Demo1">
@@ -442,6 +444,53 @@ class Graph {
                 }                      
             })  
         })
+
+        
+
+        d3.select("#compileDataReal").on("click", () => {
+          console.log('Compile data');  
+          d3.json(this.rootDir + "/compileData", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(this.nodesToData())
+            }).then( (d) => { 
+                if( (d.error || d.stderr) ) {
+                  const text = "Error: code: " + d.error.code + ", text: " + d.error.cmd + " / " + d.stderr;  
+                    d3.selectAll("#messages").html(text).style("opacity",1);
+                    d3.selectAll("#messages").transition().duration(6000)
+                        .style("opacity",0).on('end', () => d3.select("#messages").html(''));
+                    
+                }else{
+                    const name = this.dataSrc.metadata.name;
+                    console.log('requesting ' + name);
+                 
+                //    d3.timeout( () => { 
+                        d3.json(this.rootDir + '/getYAMLdataFile?data=' + name).then(d => { 
+                         //   console.log(d);
+                            if(d.error || d.stderr ) {
+                                const text = "Error: " + ( d.error ? " code: " + d.error.code + ", text: " + d.error.cmd : "" ) + d.stderr;  
+                             d3.selectAll("#messages").html(text).style("opacity",1);
+                                d3.selectAll("#messages").transition().duration(6000)
+                                    .style("opacity",0).on('end', () => d3.select("#messages").html(''));
+                            }else{
+                                this.dataYAML = d;
+                                this.initData(true);
+                                d3.select("#updateDataYAML").attr("value","Save Data [" + ( this.dataYAML.metadata.name ) + ".yaml]") 
+                                this.YAMLtoGraph(); 
+                                console.log(this.dataYAML);
+                                this.drawGraph();
+                                this.gotoPhase2();
+                            }
+                        }) 
+                 //   }, 1000);     
+                    
+        
+               
+                }                      
+            })  
+        })
+
+                
 
         d3.select("#createNew").on("click", () => {
             console.log('Create New');  
