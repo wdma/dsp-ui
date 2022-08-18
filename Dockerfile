@@ -1,15 +1,23 @@
 FROM node:current-alpine
 
-WORKDIR /home/node/app
+# Create a group and user
+RUN addgroup -S group && adduser -S user -G group
 
-COPY ./ ./
+# Set the working directory
+WORKDIR /home/user/app
+ENV PATH="/home/user/app/:${PATH}"
 
-RUN npm install
+# Copy the current directory contents into the container
+COPY ./package.json ./
 
-USER node
+COPY --chown=user:group . .
 
-COPY --chown=node:node . .
+# Install any needed packages specified in requirements.txt
+RUN npm install 
+
 
 EXPOSE 8080
+USER user
 
-CMD [ "npm", "start" ]
+# Run server.js when the container launches
+ENTRYPOINT ["npm", "start"]
