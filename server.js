@@ -172,8 +172,18 @@ app.post('/compileData', function (req, res) {
   const data = JSON.stringify(req.body, null, "\t");
   let graphname = req.body.metadata.name;
 
-  let fn = path.join(dir, 'graphs/' + graphname + '.json')
-  const fs = require("fs")
+  const {body, statusCode} = got.post('http://jargoncompiler:8080', data);
+    if (statusCode !== 200 || body.error) {
+      throw new Error(body.error || 'Oops. Something went wrong! Try again please.');
+    };
+});
+
+app.post('/compiledData', function (req, res) {
+  res.statusCode = 200;
+  console.log(req.body);
+  const data = JSON.stringify(req.body, null, "\t");
+  let graphname = req.body.metadata.name;
+  let fn = path.join(dir, 'yamls/' + graphname + '.yaml')
 
   fs.promises
     .writeFile(fn, data, { encoding: 'utf8' }, function (err) {
@@ -182,21 +192,6 @@ app.post('/compileData', function (req, res) {
       res.send({ data: resdata })
         //  console.log(resdata);
       })
-    .then(() => {
-      console.log(graphname)
-      execProm("./compile.sh " + graphname, (error, stdout, stderr) => {
-      if (error) {
-        console.log(`error: ${error.message}`);
-        return res.send({ error: error, stderr: stderr });
-      }
-      if (stderr) {
-        console.log(`stderr: ${stderr}`);
-        return res.send({ error: error, stderr: stderr });
-      }
-      console.log(`stdout: ${stdout}`);      
-      return { error: 0, msg: stdout }
-    });
-  });
 });
 
 var port = 8080;
