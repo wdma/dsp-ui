@@ -199,7 +199,7 @@
                     <div>
                         <input id="updateData" class="hidden" type="button" value="Save Data"><span id="dataUpdateResult"></span>
                         <input id="compileData" class="hidden" type="button" value="Compile Data">
-                        <input id="compileDataReal"  type="button" value="Compile Data Real">
+                        <input id="compileDataReal"  class="hidden" type="button" value="Compile Data Real">                     
                         <span id="dataCompileResult"></span>
                     </div>
                     <div>
@@ -215,6 +215,10 @@
                     <div>
                         <input id="updateDataYAML" type="button" value="Save Data (YAML)">
                         <input id="graphBack" type="button" value="Back to Graph Edit">
+                           
+                        <a id="downloadYAML" href="" target="_new" download="">
+                            <input type="button" value="Download YAML"> 
+                        </a>
                         <div id="messages"></div>
                     </div>
                 </div>
@@ -592,6 +596,14 @@ class Graph {
         this.dataToNodes();        
         this.drawGraph()  
         d3.selectAll(".node").style('opacity', 0.5).style('fill', 'brown').style('stroke-width', 7);       
+
+
+        const name = this.dataSrc.metadata.name;
+        
+        d3.select("#downloadYAML")
+            .attr("href",this.rootDir + '/getYAMLdataFile?data=' + name)
+            .attr("download",name + '.yaml')
+
     }   
 
     gotoPhase1 = () => {        
@@ -632,6 +644,7 @@ class Graph {
             this.simulation = false;
             d3.select("#updateData").classed('hidden', false)
             d3.select("#compileData").classed('hidden', false)
+            d3.select("#compileDataReal").classed('hidden', false)
         }  
 
 
