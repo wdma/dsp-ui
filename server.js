@@ -40,6 +40,17 @@ app.get('/', function (req, res) {
   res.sendFile(path.join(dir, 'public/jargon.html'));
 });
 
+app.get('/plot', function (req, res) {
+  res.statusCode = 200;
+  res.sendFile(path.join(dir, 'public/plot.html'));
+});
+
+app.get('/plotdata', function (req, res) {
+  res.statusCode = 200;
+  res.sendFile(path.join(dir, 'plot_data/timeseries.json'));
+});
+
+
 app.get('/data', function (req, res) {
   res.statusCode = 200;
   res.sendFile(path.join(dir, 'graphs/hello-world.json'));
