@@ -1,4 +1,4 @@
-FROM node:current-alpine
+FROM node:lts-alpine
 
 # Create a group and user
 RUN addgroup -S group && adduser -S user -G group

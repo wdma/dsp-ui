@@ -183,6 +183,32 @@ app.post('/compiledData', function (req, res) {
       })
 });
 
+
+function startServer(server, port, host) {
+  function onError(error) {
+    server
+      .removeListener('error', onError)
+      .removeListener('listening', onSuccess)
+    if (error.code === 'EADDRINUSE') {
+      startServer(server, ++port, host)
+    }
+  }
+
+  function onSuccess() {
+    console.log(
+      `listening at: (host = ${host}, port = ${server.address().port})`
+    )
+  }
+  server.listen(port, host)
+  .on('error', onError)
+  .on('listening', onSuccess)
+}
+
+
 var port = 8080;
+const host = '0.0.0.0';
+const server = http.createServer(app)
+
 console.log("The server is now listening to port " + port)
-var httpServer = http.createServer(app).listen(port);
+startServer(server, port, host)
+//var httpServer = http.createServer(app).listen(port);
