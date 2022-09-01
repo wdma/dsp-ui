@@ -1,2 +1,2 @@
 # dsp-ui
-This is the development prototype for the Data Science Platform for Scientists
+This is the development prototype for the Data Science Platform for Scientists commit
