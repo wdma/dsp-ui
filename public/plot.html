@@ -1,0 +1,253 @@
+<html>
+  <style> 
+ 
+    svg {
+        cursor: default;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -o-user-select: none;
+        user-select: none;
+        border: 1px;      
+        border-style: dotted;
+        background-color: lightgray;
+        width: 100%;
+    }
+
+    .hidden {
+        opacity: 0;
+        visibility: none;
+        display:none;
+    }    
+    
+    .line {
+      stroke-width: 2px;
+      fill: none;
+     /* stroke-dasharray: 5,1; */
+      stroke: rgb(8, 105, 138)
+    }
+    
+    text { 
+        font: 10px sans-serif; 
+        pointer-events: none; 
+    }
+        
+ 
+
+
+    @keyframes aselector {
+        0%   {stroke-width: 7px; filter: saturate(300%); filter: brightness(100%); }
+        50%   {stroke-width: 3px; filter: saturate(20%); filter: brightness(70%);}
+        100%   {stroke-width: 7px; filter: saturate(300%); filter: brightness(100%); }
+        }
+
+    .selected {
+        animation-name: aselector;
+        animation-duration: 1s;
+        animation-iteration-count: infinite;
+    }    
+
+    
+    #messages {
+        font-size: 1.2em;
+        font-weight:bold;
+        color: red;
+    }   
+    
+
+
+    </style>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+
+    <body>
+        <div class="main">
+            <div id="container">
+               
+                <div id="createNewForm" class="forms">
+                <form id="createForm">
+                    <div id="createNewHeader">Data Plot:</div>
+                    <div id="formFields">
+                        <div >Select X: <select name="axis-x"><select> Select Y: <select name="axis-y"></select></div>                      
+                        <div class="section"><input id="draw" type="button" value="Draw"/></div>                        
+                    </div>    
+                </form>
+            </div>
+        </div>
+    <script>
+
+
+
+   
+
+class Graph {
+
+
+    constructor(container, width, height) {
+      
+        this.rootDir  = "";
+        // const fileFix = /'/";
+
+        this.dtypes = {
+			'ISO_datetime' : 'date',
+			'time': 'time'
+
+		}
+        this.formatDate = d3.timeFormat("%b %d, %Y");
+        this.formatTime = d3.timeFormat("%b %d, %Y");
+
+        this.margin = {top: 20, right: 90, bottom: 55, left: 30},
+        this.width = width - this.margin.left - this.margin.right,
+        this.height = height - this.margin.top - this.margin.bottom;
+
+        this.svg = d3.select(container).append("svg")
+         //   .attr("width", this.width + this.margin.left + this.margin.right)
+            .attr("height", this.height + this.margin.top + this.margin.bottom);
+        this.width = this.svg.node().clientWidth;
+       
+        this.g = this.svg.append("g")
+            .attr("transform","translate(" + this.margin.left + "," + this.margin.top + ")");
+
+        this.markerG = this.svg.append("defs");   
+
+        this.dataSrc = '';        
+   
+        this.W = this.svg.node().clientWidth;
+		this.H = this.svg.node().clientHeight;
+
+		this.xScale = d3.scaleLinear().range([this.margin.left, this.W - this.margin.right]);
+		this.yScale = d3.scaleLinear().rangeRound([this.H - this.margin.top -this.margin.bottom , 0 ]);
+		this.colorScale = d3.scaleLinear();
+
+
+   /*     this.svg
+            .on('contextmenu', e => this.createNewNode(e))
+            .on('mousemove', e => this.mouseMoveEventGlobal(e)) 
+            .on('mouseup', e => this.mouseUpEventGlobal(e)) 
+*/
+
+        // handle page resizes, adjust svg size and nodes positions 
+
+        d3.select(window).on('resize', () => {
+
+            this.width = window.innerWidth;
+            this.svg.attr('width', this.width);
+        }); 
+
+        d3.select("#draw").on("click", () => {
+            console.log('Draw');  
+            this.drawGraph();         
+        })  
+
+
+      //  d3.select(".loadButtons").on("click").apply(this); /// auto-click first button
+
+        d3.text(this.rootDir + "/plotdata").then(d => { 
+            this.dataSrc = d.replace(/'/g, '"').replace(/\n\s+(\w+)/g,"\n\"$1\"");
+            this.prepareData(this.dataSrc);
+         //   this.drawGraph();                         
+        })          
+        
+    }
+
+  
+
+    prepareData = () => {
+       // console.log(this.dataSrc);
+        this.data = JSON.parse(this.dataSrc);
+        this.dataSetKey = Object.keys(this.data)[0];
+        this.dataFields = Object.keys(this.data[this.dataSetKey]);  
+       //  this.data = this.data.toArray();
+       console.log(this.data);
+       this.dataArray = [];
+       for(let i in this.data) {
+            this.dataArray.push(this.data[i])
+       }
+
+        d3.select('[name="axis-x"]').selectAll("option").data(this.dataFields).join("option").attr("value",d => d).text(d => d)
+        d3.select('[name="axis-y"]').selectAll("option").data(this.dataFields).join("option").attr("value",d => d).text(d => d)
+        
+    }  
+
+    xConv = (t,d) => {
+        if(this.dtypes[t]  == 'date') {
+            console.log(new Date(d))
+            return new Date(d);
+        }
+        if(this.dtypes[t]  == 'time') {
+            return new Date(d);
+        }
+        if(+d > 0) return +d;
+        return d;
+    }
+
+    drawGraph(restart) {
+        const that = this;
+        const scaleXi = d3.select('[name="axis-x"]').node().selectedIndex;
+        const scaleYi = d3.select('[name="axis-y"]').node().selectedIndex;
+        const X = this.dataFields[scaleXi]; 
+        const Y = this.dataFields[scaleYi];
+
+        console.log('X:',X," Y:", Y, this.data)
+
+        this.dataS = this.dataArray.map(d => {
+            //console.log(d[X]); 
+            d[X] = this.xConv(X,d[X]); d[Y] = this.xConv(Y,d[Y]); return d } );
+
+        console.log(this.dataS);
+
+        this.xScale.domain(d3.extent(this.dataS, d => d[X])).nice();
+		this.yScale.domain(d3.extent(this.dataS, d => d[Y])).nice();
+
+        console.log(this.xScale.domain())
+        console.log(this.yScale.domain())
+
+		const yaxis = d3.axisLeft().scale(this.yScale)//// .tickPadding(30);
+		const xaxis = d3.axisBottom().scale(this.xScale).tickFormat(x => {
+            console.log(x)
+            if(this.dtypes[X]  == 'date') return this.formatDate(x);
+            return this.formatDate(x);
+            return x;        
+        });
+
+		// const data = [...d3.group(this.data, d => d.date)]  
+
+		this.gg = this.g.append('g');
+
+		this.g.append("g")
+    		.attr("class", "axis axisY")
+    		.attr("transform", "translate(" + [this.margin.left,0]+ ")")
+    		.call(yaxis);
+
+		this.g.append("g")
+    		.attr("class", "axis axisX")
+			.attr("transform", "translate(" + [0,this.H - this.margin.bottom - this.margin.top + 1] + ")")
+    		.call(xaxis)
+            .selectAll("text")  
+                .style("text-anchor", "end")
+                .attr("dx", "-.8em")
+                .attr("dy", ".15em")
+                .attr("transform", "translate(20,0)rotate(-45)");
+
+        this.line = d3.line()
+			.curve(d3.curveMonotoneX)
+			.x(d => this.xScale(d[X]))
+    		.y(d => this.yScale(d[Y]));
+        
+            this.g.append('path').classed('line', true).attr('d', this.line(this.dataS))    
+
+
+    }
+
+
+}    
+
+
+const g = new Graph("#container", 800,600);   
+
+// g.loadData("getdataFile?data=demo1Graph");
+
+</script>
+</body>
+</html>
