@@ -3,7 +3,11 @@
   "version": "0.0.2",
   "description": "the DSP",
   "dependencies": {
-    "express": "^4.17.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "got": "^11.8.5",
+    "http": "^0.0.1-security",
+    "http2": "^3.3.7",
     "ip": "^1.1.5",
     "nodemon": "^2.0.7",
     "open": "^7.3.0",
@@ -11,14 +15,13 @@
     "serve-favicon": "^2.5.0",
     "shelljs": "^0.8",
     "standard": "*",
-    "uuid": "^8.3.2",
-    "got": "^11.8.5"
+    "uuid": "^8.3.2"
   },
   "license": "MIT",
   "scripts": {
     "hello": "echo \"Hello World\"",
     "ls": "ls -l",
-    "start": "node server.js"
+    "start": "node server.mjs"
   },
   "main": "npm.js",
   "author": "diana.ma@hippocampusanalytics.com"
